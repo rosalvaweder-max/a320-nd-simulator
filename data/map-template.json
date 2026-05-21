@@ -1,0 +1,85 @@
+{
+  "metadata": {
+    "name": "我的自定义地图",
+    "version": "1.0.0",
+    "description": "在此描述您的地图",
+    "author": "您的名字",
+    "created": "2026-01-01",
+    "coordinateSystem": "NM",
+    "bounds": {
+      "minX": -500,
+      "maxX": 500,
+      "minY": -500,
+      "maxY": 500
+    }
+  },
+  "waypoints": [
+    {
+      "id": "wp-001",
+      "name": "WPT01",
+      "type": "FIX",
+      "x": 0,
+      "y": 0,
+      "elevation": 0,
+      "frequency": null
+    },
+    {
+      "id": "wp-002",
+      "name": "WPT02",
+      "type": "FIX",
+      "x": 100,
+      "y": 100,
+      "elevation": 0,
+      "frequency": null
+    }
+  ],
+  "navaids": [
+    {
+      "id": "vor-001",
+      "name": "VOR1",
+      "type": "VOR",
+      "x": -100,
+      "y": 50,
+      "frequency": "114.10",
+      "range": 200
+    },
+    {
+      "id": "ndb-001",
+      "name": "NDB1",
+      "type": "NDB",
+      "x": 50,
+      "y": -100,
+      "frequency": "385",
+      "range": 100
+    }
+  ],
+  "airways": [
+    {
+      "id": "awy-001",
+      "name": "AWY01",
+      "color": "#06b6d4",
+      "waypointIds": ["wp-001", "vor-001", "wp-002"]
+    }
+  ],
+  "terrain": [
+    {
+      "type": "mountain",
+      "name": "山脉名称",
+      "vertices": [
+        {"x": 50, "y": -50},
+        {"x": 100, "y": -30},
+        {"x": 80, "y": 10}
+      ],
+      "elevation": 2000,
+      "color": "#4b5563"
+    }
+  ],
+  "defaultRoutes": [
+    {
+      "id": "route-001",
+      "name": "默认航路",
+      "description": "航路描述",
+      "waypointIds": ["wp-001", "vor-001", "wp-002"]
+    }
+  ]
+}

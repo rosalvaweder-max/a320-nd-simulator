@@ -1,0 +1,162 @@
+{
+  "metadata": {
+    "name": "欧洲区域导航图",
+    "version": "1.0.0",
+    "description": "欧洲主要航路点和导航设施",
+    "author": "A320 Simulator Team",
+    "created": "2026-03-25",
+    "coordinateSystem": "NM",
+    "bounds": {
+      "minX": -500,
+      "maxX": 500,
+      "minY": -500,
+      "maxY": 500
+    }
+  },
+  "waypoints": [
+    {
+      "id": "wp-eu-001",
+      "name": "LFPG",
+      "type": "AIRPORT",
+      "x": -120,
+      "y": 80,
+      "elevation": 392,
+      "frequency": "118.10",
+      "runways": ["09L/27R", "09R/27L"]
+    },
+    {
+      "id": "wp-eu-002",
+      "name": "EGLL",
+      "type": "AIRPORT",
+      "x": -80,
+      "y": 120,
+      "elevation": 83,
+      "frequency": "118.50"
+    },
+    {
+      "id": "wp-eu-003",
+      "name": "EDDF",
+      "type": "AIRPORT",
+      "x": 40,
+      "y": 60,
+      "elevation": 364,
+      "frequency": "119.70"
+    },
+    {
+      "id": "wp-eu-004",
+      "name": "LIRF",
+      "type": "AIRPORT",
+      "x": 120,
+      "y": -40,
+      "elevation": 13,
+      "frequency": "118.30"
+    },
+    {
+      "id": "wp-eu-005",
+      "name": "EHAM",
+      "type": "AIRPORT",
+      "x": -40,
+      "y": 160,
+      "elevation": -3,
+      "frequency": "118.10"
+    }
+  ],
+  "navaids": [
+    {
+      "id": "vor-eu-001",
+      "name": "DVR",
+      "type": "VOR",
+      "x": -60,
+      "y": 40,
+      "frequency": "113.70",
+      "range": 200
+    },
+    {
+      "id": "vor-eu-002",
+      "name": "KOK",
+      "type": "VOR",
+      "x": 20,
+      "y": 20,
+      "frequency": "115.50",
+      "range": 180
+    },
+    {
+      "id": "vor-eu-003",
+      "name": "NVS",
+      "type": "VOR",
+      "x": 80,
+      "y": -20,
+      "frequency": "112.10",
+      "range": 150
+    },
+    {
+      "id": "ndb-eu-001",
+      "name": "AB",
+      "type": "NDB",
+      "x": -100,
+      "y": 0,
+      "frequency": "385",
+      "range": 100
+    }
+  ],
+  "airways": [
+    {
+      "id": "awy-eu-001",
+      "name": "UN873",
+      "color": "#06b6d4",
+      "waypointIds": ["wp-eu-001", "vor-eu-001", "wp-eu-002"]
+    },
+    {
+      "id": "awy-eu-002",
+      "name": "UL607",
+      "color": "#06b6d4",
+      "waypointIds": ["wp-eu-002", "vor-eu-002", "wp-eu-003"]
+    },
+    {
+      "id": "awy-eu-003",
+      "name": "UM978",
+      "color": "#06b6d4",
+      "waypointIds": ["wp-eu-003", "vor-eu-003", "wp-eu-004"]
+    }
+  ],
+  "terrain": [
+    {
+      "type": "mountain",
+      "name": "阿尔卑斯山脉",
+      "vertices": [
+        {"x": 60, "y": -80},
+        {"x": 100, "y": -60},
+        {"x": 120, "y": -20},
+        {"x": 80, "y": 20},
+        {"x": 40, "y": -40}
+      ],
+      "elevation": 3000,
+      "color": "#4b5563"
+    },
+    {
+      "type": "water",
+      "name": "北海",
+      "vertices": [
+        {"x": -200, "y": 200},
+        {"x": 0, "y": 200},
+        {"x": 40, "y": 180},
+        {"x": -160, "y": 180}
+      ],
+      "color": "#3b82f6"
+    }
+  ],
+  "defaultRoutes": [
+    {
+      "id": "route-eu-001",
+      "name": "欧洲东西干线",
+      "description": "巴黎→法兰克福→罗马",
+      "waypointIds": ["wp-eu-001", "vor-eu-001", "vor-eu-002", "wp-eu-003", "vor-eu-003", "wp-eu-004"]
+    },
+    {
+      "id": "route-eu-002",
+      "name": "北欧环线",
+      "description": "伦敦→阿姆斯特丹→法兰克福",
+      "waypointIds": ["wp-eu-002", "wp-eu-005", "vor-eu-001", "wp-eu-003"]
+    }
+  ]
+}

@@ -1,0 +1,188 @@
+{
+  "metadata": {
+    "name": "默认航路导航图",
+    "version": "1.0.0",
+    "description": "与模拟器默认航路和VOR台完全匹配的地图，加载后可直接使用",
+    "author": "A320 ND Simulator",
+    "created": "2026-05-13",
+    "coordinateSystem": "NM",
+    "bounds": {
+      "minX": -300,
+      "maxX": 100,
+      "minY": 0,
+      "maxY": 200
+    }
+  },
+  "waypoints": [
+    {
+      "id": "wp-lfpg",
+      "name": "LFPG",
+      "type": "AIRPORT",
+      "x": -120,
+      "y": 80,
+      "elevation": 392,
+      "frequency": "118.10"
+    },
+    {
+      "id": "wp-egll",
+      "name": "EGLL",
+      "type": "AIRPORT",
+      "x": -150,
+      "y": 50,
+      "elevation": 80,
+      "frequency": "118.30"
+    },
+    {
+      "id": "wp-cdg",
+      "name": "CDG",
+      "type": "FIX",
+      "x": -100,
+      "y": 60,
+      "elevation": 0,
+      "frequency": null
+    },
+    {
+      "id": "wp-lam",
+      "name": "LAM",
+      "type": "NDB",
+      "x": -80,
+      "y": 40,
+      "elevation": 0,
+      "frequency": "385"
+    },
+    {
+      "id": "wp-todil",
+      "name": "TODIL",
+      "type": "FIX",
+      "x": -90,
+      "y": 100,
+      "elevation": 0,
+      "frequency": null
+    },
+    {
+      "id": "wp-kok",
+      "name": "KOK",
+      "type": "NDB",
+      "x": -70,
+      "y": 120,
+      "elevation": 0,
+      "frequency": "385"
+    }
+  ],
+  "navaids": [
+    {
+      "id": "vor-gow",
+      "name": "GOW",
+      "type": "VOR",
+      "x": -110,
+      "y": 85,
+      "frequency": "114.10",
+      "range": 200
+    },
+    {
+      "id": "vor-doo",
+      "name": "DOO",
+      "type": "VOR",
+      "x": -135,
+      "y": 65,
+      "frequency": "113.70",
+      "range": 180
+    },
+    {
+      "id": "vor-ood",
+      "name": "OOD",
+      "type": "VOR",
+      "x": -155,
+      "y": 45,
+      "frequency": "112.50",
+      "range": 180
+    },
+    {
+      "id": "vor-big",
+      "name": "BIG",
+      "type": "VOR",
+      "x": -95,
+      "y": 55,
+      "frequency": "115.30",
+      "range": 150
+    },
+    {
+      "id": "vor-lam",
+      "name": "LAM",
+      "type": "VOR",
+      "x": -85,
+      "y": 105,
+      "frequency": "116.80",
+      "range": 150
+    },
+    {
+      "id": "vor-cdg",
+      "name": "CDG",
+      "type": "VOR",
+      "x": -65,
+      "y": 125,
+      "frequency": "117.50",
+      "range": 150
+    }
+  ],
+  "airways": [
+    {
+      "id": "awy-001",
+      "name": "A1",
+      "color": "#06b6d4",
+      "waypointIds": ["wp-lfpg", "vor-gow", "wp-todil", "vor-lam", "wp-kok", "vor-cdg"]
+    },
+    {
+      "id": "awy-002",
+      "name": "B1",
+      "color": "#06b6d4",
+      "waypointIds": ["wp-lfpg", "vor-doo", "wp-egll"]
+    },
+    {
+      "id": "awy-003",
+      "name": "C1",
+      "color": "#06b6d4",
+      "waypointIds": ["wp-egll", "vor-ood", "wp-cdg", "vor-big", "wp-lam"]
+    }
+  ],
+  "terrain": [
+    {
+      "type": "urban",
+      "name": "巴黎城区",
+      "vertices": [
+        {"x": -130, "y": 75},
+        {"x": -110, "y": 75},
+        {"x": -110, "y": 90},
+        {"x": -130, "y": 90}
+      ],
+      "elevation": 300,
+      "color": "#6b7280"
+    },
+    {
+      "type": "urban",
+      "name": "伦敦城区",
+      "vertices": [
+        {"x": -160, "y": 45},
+        {"x": -140, "y": 45},
+        {"x": -140, "y": 60},
+        {"x": -160, "y": 60}
+      ],
+      "elevation": 200,
+      "color": "#6b7280"
+    }
+  ],
+  "defaultRoutes": [
+    {
+      "id": "route-default",
+      "name": "默认航路",
+      "description": "LFPG → EGLL → CDG → LAM → TODIL → KOK（循环航线）",
+      "waypointIds": ["wp-lfpg", "wp-egll", "wp-cdg", "wp-lam", "wp-todil", "wp-kok"]
+    },
+    {
+      "id": "route-vor-tour",
+      "name": "VOR导航路线",
+      "description": "沿VOR台飞行：GOW → DOO → OOD → BIG → LAM → CDG",
+      "waypointIds": ["vor-gow", "vor-doo", "vor-ood", "vor-big", "vor-lam", "vor-cdg"]
+    }
+  ]
+}
