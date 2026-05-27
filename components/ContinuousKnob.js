@@ -101,6 +101,27 @@ const ContinuousKnob = ({
         }
     }, [value, step, min, max, onChange, isDragging]);
 
+    // Add native wheel listener on the container (React onWheel is passive, preventDefault won't work)
+    const containerRef = useRef(null);
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+        const handler = (e) => {
+            e.preventDefault();
+            const delta = e.deltaY < 0 ? step : -step;
+            let newValue = Math.round((value + delta) / step) * step;
+            if (max - min === 360) {
+                newValue = ((newValue - min) % (max - min) + (max - min)) % (max - min) + min;
+            } else {
+                if (newValue > max) newValue = max;
+                if (newValue < min) newValue = min;
+            }
+            onChange(newValue);
+        };
+        el.addEventListener('wheel', handler, { passive: false });
+        return () => el.removeEventListener('wheel', handler);
+    }, [value, step, min, max, onChange]);
+
     // Add/remove global mouse listeners
     useEffect(() => {
         if (isDragging) {
@@ -117,7 +138,9 @@ const ContinuousKnob = ({
     const r = size / 2;
 
     return React.createElement('div', {
-        className: 'flex flex-col items-center select-none'
+        ref: containerRef,
+        className: 'flex flex-col items-center select-none',
+        style: { position: 'relative' }
     }, [
         // Knob container
         React.createElement('div', {

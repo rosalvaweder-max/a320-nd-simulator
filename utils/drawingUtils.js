@@ -133,6 +133,7 @@ export const drawCompassRose = (ctx, radius, heading, mode) => {
     ctx.strokeStyle = COLORS.COMPASS_GREY;
     if (isLabel) ctx.strokeStyle = COLORS.COMPASS_WHITE;
 
+    // Always draw ticks outside the compass ring
     const innerR = radius;
     const outerR = radius + len;
 
@@ -147,7 +148,9 @@ export const drawCompassRose = (ctx, radius, heading, mode) => {
     ctx.stroke();
 
     if (isLabel) {
-      const labelR = radius + 28;
+      // Labels outside the compass ring
+      const labelOffset = Math.max(16, radius * 0.08);
+      const labelR = radius + labelOffset;
       const tx = Math.cos(angleRad) * labelR;
       const ty = Math.sin(angleRad) * labelR;
       
@@ -226,7 +229,7 @@ export const drawWaypointInfo = (ctx, wptName, track, dist, time, width) => {
 
 // --- ILS / VOR INTERFACES ---
 
-export const drawILSInterface = (ctx, width, height, heading, course, locDeviation = 0, gsDeviation = 0, radius = 140, nextWaypoint = null) => {
+export const drawILSInterface = (ctx, width, height, heading, course, locDeviation = 0, gsDeviation = 0, radius = 140, nextWaypoint = null, range = 10, pxPerNM = 27) => {
     const cx = width / 2;
     const cy = height / 2;
     const rx = width - 20;
@@ -258,6 +261,7 @@ export const drawILSInterface = (ctx, width, height, heading, course, locDeviati
     const displayName = nextWaypoint ? nextWaypoint.name : "IYRA";
     ctx.fillText(displayName, rx, topY + 55);
 
+    // ========== GS (Vertical) Scale on Right Side ==========
     const gsX = width - 20;
     
     ctx.strokeStyle = COLORS.TEXT_AMBER;
@@ -268,19 +272,20 @@ export const drawILSInterface = (ctx, width, height, heading, course, locDeviati
     ctx.lineTo(gsX + baselineLength/2, cy);
     ctx.stroke();
     
-    ctx.fillStyle = COLORS.COMPASS_WHITE;
+    // GS dots - hollow (outlined) instead of filled
+    ctx.strokeStyle = COLORS.COMPASS_WHITE;
+    ctx.lineWidth = 1.5;
     const gsDotSpacing = 35;
     [-2, -1, 1, 2].forEach(i => {
         ctx.beginPath();
         ctx.arc(gsX, cy + i * gsDotSpacing, 3, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.stroke();
     });
-    ctx.fillStyle = COLORS.TEXT_MAGENTA;
 
+    // GS deviation diamond indicator
     const gsDegreesPerDot = 0.4;
     let gsDeviationInDots;
     if (gsDeviation === 0) {
-        // Fixed in center when no deviation
         gsDeviationInDots = 0;
     } else {
         gsDeviationInDots = gsDeviation / gsDegreesPerDot;
@@ -297,11 +302,35 @@ export const drawILSInterface = (ctx, width, height, heading, course, locDeviati
     ctx.lineTo(gsX - 8, gsY);
     ctx.closePath();
     ctx.stroke();
+
+    const halfRangeRadius = range * 0.5 * pxPerNM;
+    drawCourseDagger(ctx, cx, cy, heading, course, true, locDeviation, true, radius, null, halfRangeRadius);
     
-    drawCourseDagger(ctx, cx, cy, heading, course, true, locDeviation, true, radius);
+    // ========== LOC (Horizontal) Scale on 0.5 Range Ring Diameter ==========
+    // In real A320 ND ILS mode, the LOC deviation scale is shown as
+    // hollow circles distributed along the horizontal diameter of the 0.5 range ring.
+    const locDotSpacing = halfRangeRadius / 2;  // evenly spaced: 0, ±half/2, ±half
+    const locDotRadius = 4;  // slightly larger hollow circles
+    
+    // Draw center tick (vertical line at center)
+    ctx.strokeStyle = COLORS.TEXT_AMBER;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - 10);
+    ctx.lineTo(cx, cy + 10);
+    ctx.stroke();
+    
+    // Draw hollow circles at evenly spaced positions on the horizontal diameter
+    ctx.strokeStyle = COLORS.COMPASS_WHITE;
+    ctx.lineWidth = 1.5;
+    [-2, -1, 1, 2].forEach(i => {
+        ctx.beginPath();
+        ctx.arc(cx + i * locDotSpacing, cy, locDotRadius, 0, Math.PI * 2);
+        ctx.stroke();
+    });
 };
 
-export const drawVORInterface = (ctx, width, height, heading, course, vorStation = null, deviation = 0, isToMode = true, radius = 140, bearingToVOR = null, innerRadius = 20) => {
+export const drawVORInterface = (ctx, width, height, heading, course, vorStation = null, deviation = 0, isToMode = true, radius = 140, bearingToVOR = null, innerRadius = 20, range = 10, pxPerNM = 27) => {
     const cx = width / 2;
     const cy = height / 2;
     const rx = width - 20;
@@ -333,14 +362,15 @@ export const drawVORInterface = (ctx, width, height, heading, course, vorStation
     ctx.fillStyle = COLORS.TEXT_WHITE;
     ctx.fillText(vorName, rx, topY + 55);
 
-    drawCourseDagger(ctx, cx, cy, heading, course, false, deviation, isToMode, radius);
+    const halfRangeRadius = range * 0.5 * pxPerNM;
+    drawCourseDagger(ctx, cx, cy, heading, course, false, deviation, isToMode, radius, null, halfRangeRadius);
     
     if (bearingToVOR !== null) {
         drawBearingPointer(ctx, cx, cy, heading, bearingToVOR, radius, innerRadius);
     }
 };
 
-const drawCourseDagger = (ctx, cx, cy, heading, course, isILS, deviation = 0, isToMode = true, radius = 140, legCourse = null) => {
+const drawCourseDagger = (ctx, cx, cy, heading, course, isILS, deviation = 0, isToMode = true, radius = 140, legCourse = null, maxDeviationPx = 60) => {
     ctx.save();
     ctx.translate(cx, cy);
     
@@ -414,17 +444,29 @@ const drawCourseDagger = (ctx, cx, cy, heading, course, isILS, deviation = 0, is
     ctx.beginPath();
     ctx.moveTo(-10, len);
     ctx.lineTo(10, len);
+    ctx.stroke();
+
+    // Deviation scale dots - hollow circles inside max deviation range
+    // Leave ~1.5 circle-widths gap from max deviation (circle radius=4, gap≈12px)
+    // ILS uses its own LOC scale in drawILSInterface, so skip here
+    const dotRadius = 4;
+    const dotGap = dotRadius * 3;  // ~1.5 circle-widths gap from max
+    const dotMaxPx = maxDeviationPx - dotGap;  // dots stay inside this range
+    const adjustedSpacing = dotMaxPx / 2;  // 2 steps from center to max dot
     
-    ctx.fillStyle = COLORS.COMPASS_WHITE;
-    for(let i of [-2, -1, 1, 2]) {
-       ctx.beginPath();
-       ctx.arc(i * 30, 0, 2, 0, Math.PI*2);
-       ctx.fill();
+    if (!isILS) {
+        ctx.strokeStyle = COLORS.COMPASS_WHITE;
+        ctx.lineWidth = 1.5;
+        for(let i of [-2, -1, 1, 2]) {
+           ctx.beginPath();
+           ctx.arc(i * adjustedSpacing, 0, dotRadius, 0, Math.PI*2);
+           ctx.stroke();
+        }
     }
 
-    const degreesPerDot = 5;
-    const maxDegrees = 4 * degreesPerDot;
-    const pixelsPerDegree = 30 / degreesPerDot;
+    const degreesPerDot = 1.25;
+    const maxDegrees = 2 * degreesPerDot;
+    const pixelsPerDegree = maxDeviationPx / maxDegrees;
     
     const clampedDeviation = Math.max(-maxDegrees, Math.min(maxDegrees, deviation));
     const devOffset = clampedDeviation * pixelsPerDegree;

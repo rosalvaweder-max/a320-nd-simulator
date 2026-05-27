@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>生成论文插图 - 流程图与代码截图</title>
+<style>
+  body { font-family: 'Microsoft YaHei', sans-serif; background: #f0f0f0; margin: 0; padding: 20px; }
+  .page { max-width: 1200px; margin: 0 auto; }
+  h1 { text-align: center; color: #333; }
+  .figure-container { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin: 20px 0; padding: 20px; }
+  .figure-title { font-size: 16px; font-weight: bold; color: #333; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #1a73e8; }
+  canvas { display: block; margin: 0 auto; background: white; }
+  .btn-group { text-align: center; margin: 10px 0; }
+  .btn-group button { margin: 0 5px; padding: 8px 20px; background: #1a73e8; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+  .btn-group button:hover { background: #1557b0; }
+  .code-block { background: #ffffff; color: #000000; padding: 15px; border-radius: 6px; font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; line-height: 1.5; overflow-x: auto; white-space: pre; border: 1px solid #ccc; }
+  .code-title { background: #f0f0f0; color: #333; padding: 6px 15px; border-radius: 6px 6px 0 0; font-size: 13px; font-family: 'Consolas', monospace; border: 1px solid #ccc; border-bottom: none; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>论文插图生成器</h1>
+  <p style="text-align:center;color:#666;">打开此HTML文件 → 右键点击图片可保存为PNG</p>
+
+  <!-- 图1: 系统架构图 -->
+  <div class="figure-container" id="fig1-container">
+    <div class="figure-title">图5.1 系统三层模块化架构图</div>
+    <canvas id="fig1" width="1300" height="900"></canvas>
+    <div class="btn-group">
+      <button onclick="downloadCanvas('fig1', '图5.1-系统三层模块化架构图.png')">下载图片</button>
+    </div>
+  </div>
+
+  <!-- 图2: ROSE NAV模式绘制流程 -->
+  <div class="figure-container" id="fig2-container">
+    <div class="figure-title">图5.2 ROSE NAV模式绘制流程图</div>
+    <canvas id="fig2" width="800" height="700"></canvas>
+    <div class="btn-group">
+      <button onclick="downloadCanvas('fig2', '图5.2-ROSE NAV模式绘制流程图.png')">下载图片</button>
+    </div>
+  </div>
+
+  <!-- 图3: VOR模式五阶段流水线 -->
+  <div class="figure-container" id="fig3-container">
+    <div class="figure-title">图5.3 VOR模式五阶段流水线架构图</div>
+    <canvas id="fig3" width="700" height="800"></canvas>
+    <div class="btn-group">
+      <button onclick="downloadCanvas('fig3', '图5.3-VOR模式五阶段流水线架构图.png')">下载图片</button>
+    </div>
+  </div>
+
+  <!-- 图4: ILS偏差指示示意图 -->
+  <div class="figure-container" id="fig4-container">
+    <div class="figure-title">图5.4 ILS航向道与下滑道偏差指示示意图</div>
+    <canvas id="fig4" width="700" height="500"></canvas>
+    <div class="btn-group">
+      <button onclick="downloadCanvas('fig4', '图5.4-ILS偏差指示示意图.png')">下载图片</button>
+    </div>
+  </div>
+
+  <!-- 图5: 动画循环与数据流 -->
+  <div class="figure-container" id="fig5-container">
+    <div class="figure-title">图5.5 动画循环与数据流图</div>
+    <canvas id="fig5" width="800" height="450"></canvas>
+    <div class="btn-group">
+      <button onclick="downloadCanvas('fig5', '图5.5-动画循环与数据流图.png')">下载图片</button>
+    </div>
+  </div>
+
+  <!-- 图6: EFIS控制面板布局 -->
+  <div class="figure-container" id="fig6-container">
+    <div class="figure-title">图5.6 EFIS控制面板布局图</div>
+    <canvas id="fig6" width="800" height="400"></canvas>
+    <div class="btn-group">
+      <button onclick="downloadCanvas('fig6', '图5.6-EFIS控制面板布局图.png')">下载图片</button>
+    </div>
+  </div>
+
+  <!-- 代码截图区域 -->
+  <div class="figure-container">
+    <div class="figure-title">代码截图1：Canvas画布初始化（NDDisplay.js）</div>
+    <div class="code-title">components/NDDisplay.js</div>
+    <div class="code-block">// ND显示组件：接收模式、量程、飞机状态、航路数据等属性
+const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemState }) => {
+  const canvasRef = useRef(null);       // 获取Canvas DOM元素的引用
+  const width = 600;                    // 画布宽度（像素）
+  const height = 600;                   // 画布高度（像素）
+  const cx = width / 2;                 // 画布中心X坐标
+  const cy = height / 2;                // 画布中心Y坐标
+
+  // 组件挂载或依赖项变化时触发绘制
+  useEffect(() => {
+    const canvas = canvasRef.current;   // 获取Canvas DOM节点
+    const ctx = canvas.getContext('2d');// 获取2D渲染上下文
+    const compassRadius = height * 0.45;// 罗盘半径，占画布高度的45%
+    const pxPerNM = compassRadius / range;// 每海里对应的像素数
+    drawFrame(ctx, width, height, cx, cy, compassRadius, pxPerNM);// 执行核心绘制
+  }, [mode, range, aircraft]);          // 依赖项：模式、量程、飞机状态
+
+  // 创建600×600像素的Canvas元素
+  return React.createElement('canvas', {
+    ref: canvasRef,                     // 绑定Canvas引用
+    width: 600,                         // 设置画布宽度
+    height: 600,                        // 设置画布高度
+    className: 'nd-canvas'              // CSS类名
+  });
+};</div>
+  </div>
+
+  <div class="figure-container">
+    <div class="figure-title">代码截图2：等距方位投影坐标变换</div>
+    <div class="code-title">utils/drawingUtils.js</div>
+    <div class="code-block">// 等距方位投影：将世界坐标转换为屏幕坐标
+const worldToScreen = (wx, wy, acX, acY, heading, pxPerNM) => {
+  const dx = wx - acX;                    // 目标点相对于飞机的X偏移
+  const dy = wy - acY;                    // 目标点相对于飞机的Y偏移
+  const rad = heading * Math.PI / 180;    // 航向角度转弧度
+  // 航向旋转矩阵：将地理坐标旋转至航向朝上
+  const rx = dx * Math.cos(rad) + dy * Math.sin(rad);
+  const ry = -dx * Math.sin(rad) + dy * Math.cos(rad);
+  // 缩放并返回屏幕坐标（Y轴取反）
+  return { sx: rx * pxPerNM, sy: -ry * pxPerNM };
+};</div>
+  </div>
+
+  <div class="figure-container">
+    <div class="figure-title">代码截图3：动画循环驱动（App.js）</div>
+    <div class="code-title">App.js</div>
+    <div class="code-block">// 动画循环：每帧更新飞机位置与航向
+const animate = () => {
+  setAircraft(a => ({
+    ...a,
+    // 根据航向计算X轴位移
+    x: a.x + Math.sin(a.heading * Math.PI / 180) * 0.5,
+    // 根据航向计算Y轴位移
+    y: a.y + Math.cos(a.heading * Math.PI / 180) * 0.5,
+    heading: a.heading + 0.1  // 航向缓慢旋转
+  }));
+  animationFrameId = requestAnimationFrame(animate);
+};</div>
+  </div>
+
+  <div class="figure-container">
+    <div class="figure-title">代码截图4：ILS偏差指示绘制</div>
+    <div class="code-title">utils/drawingUtils.js - drawILSInterface</div>
+    <div class="code-block">export const drawILSInterface = (ctx, width, height, heading, course,
+    locDeviation = 0, gsDeviation = 0, radius = 140, nextWaypoint = null) => {
+  // 屏幕右上角显示ILS频率、航道与识别码
+  const rx = width - 20;
+  ctx.fillStyle = COLORS.TEXT_MAGENTA;
+  ctx.fillText(freq, rx, topY);           // 洋红色ILS频率
+  ctx.fillStyle = COLORS.HEADING_BLUE;
+  ctx.fillText(crsStr, rx, topY + 25);    // 蓝色选择航道
+  ctx.fillStyle = COLORS.TEXT_MAGENTA;
+  ctx.fillText(displayName, rx, topY + 55); // 洋红色识别码
+
+  // 右侧下滑道（GS）偏离刻度尺
+  const gsX = width - 20;
+  ctx.strokeStyle = COLORS.TEXT_AMBER;
+  ctx.beginPath();
+  ctx.moveTo(gsX - 10, cy);               // 中央黄色短横线
+  ctx.lineTo(gsX + 10, cy);
+  ctx.stroke();
+  // 上下各两个白色圆点，每个点代表约0.4°下滑道偏差
+  [-2, -1, 1, 2].forEach(i => {
+    ctx.arc(gsX, cy + i * 35, 3, 0, Math.PI * 2);
+  });
+  // 洋红色菱形指示器显示当前下滑道偏差
+  const gsY = cy - clampedGsDev * 35;
+  ctx.strokeRect(gsX - 8, gsY - 8, 16, 16);
+};</div>
+  </div>
+
+  <div class="figure-container">
+    <div class="figure-title">代码截图5：React状态管理（App.js）</div>
+    <div class="code-title">App.js</div>
+    <div class="code-block">// ND显示模式：ROSE NAV / ROSE ILS / ROSE VOR / ARC / PLAN
+const [mode, setMode] = useState('ROSE NAV');
+const [range, setRange] = useState(40);  // 显示量程（NM）
+
+// 飞机状态：位置坐标、航向、航迹、速度、高度等
+const [aircraft, setAircraft] = useState({
+  x: 0, y: 0, heading: 0, track: 0,
+  gs: 420, tas: 435,
+  windDir: 0, windSpeed: 0,
+  altitude: 35000, nextWaypointId: null
+});
+
+// 系统状态：计时器、天气雷达、地形、交通显示开关
+const [systemState, setSystemState] = useState({
+  showChrono: false, chronoStartTime: null,
+  showWeather: false, showTerrain: false, showTraffic: false
+});</div>
+  </div>
+
+  <div class="figure-container">
+    <div class="figure-title">代码截图6：地图数据服务（MapDataService.js）</div>
+    <div class="code-title">services/MapDataService.js</div>
+    <div class="code-block">class MapDataService {
+  // 从URL加载地图数据
+  async loadMapFromUrl(url) {
+    const response = await fetch(url);
+    const rawData = await response.json();
+    return this.validateAndNormalizeMapData(rawData);
+  }
+  // 从本地文件加载地图数据
+  async loadMapFromFile(file) {
+    const text = await file.text();
+    const rawData = JSON.parse(text);
+    return this.validateAndNormalizeMapData(rawData);
+  }
+  // 验证并标准化地图数据
+  validateAndNormalizeMapData(rawData) {
+    return {
+      metadata: { name: rawData.metadata?.name || 'Unnamed Map',
+                  version: rawData.metadata?.version || '1.0',
+                  bounds: rawData.metadata?.bounds || null },
+      waypoints: this.normalizeWaypoints(rawData.waypoints || []),
+      navaids: this.normalizeNavaids(rawData.navaids || []),
+      airways: rawData.airways || [],
+      terrain: rawData.terrain || [],
+      defaultRoutes: rawData.defaultRoutes || [],
+    };
+  }
+}</div>
+  </div>
+</div>
+
+<script>
+function downloadCanvas(canvasId, filename) {
+  const canvas = document.getElementById(canvasId);
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// roundRect polyfill for older browsers
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    if (r > w/2) r = w/2;
+    if (r > h/2) r = h/2;
+    this.moveTo(x + r, y);
+    this.lineTo(x + w - r, y);
+    this.quadraticCurveTo(x + w, y, x + w, y + r);
+    this.lineTo(x + w, y + h - r);
+    this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    this.lineTo(x + r, y + h);
+    this.quadraticCurveTo(x, y + h, x, y + h - r);
+    this.lineTo(x, y + r);
+    this.quadraticCurveTo(x, y, x + r, y);
+    return this;
+  };
+}
+
+// ========== 图1: 系统三层模块化架构图 ==========
+(function() {
+  const canvas = document.getElementById('fig1');
+  const ctx = canvas.getContext('2d');
+  const W = 1300, H = 900;
+  ctx.clearRect(0, 0, W, H);
+
+  const colors = {
+    display: { bg: '#f5f5f5', border: '#333', text: '#000' },
+    control: { bg: '#e8e8e8', border: '#333', text: '#000' },
+    service: { bg: '#dcdcdc', border: '#333', text: '#000' },
+    arrow: '#666',
+    title: '#000'
+  };
+
+  // 去掉标题文字
+
+  const drawLayer = (y, label, color, items) => {
+    const boxW = 1100, boxH = 220;
+    const boxX = (W - boxW) / 2;
+
+    ctx.fillStyle = color.bg;
+    ctx.strokeStyle = color.border;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.roundRect(boxX, y, boxW, boxH, 12);
+    ctx.fill();
+    ctx.stroke();
+
+    // 去掉层标签文字
+
+    const itemW = 260, itemH = 120, gap = 30;
+    const totalW = items.length * itemW + (items.length - 1) * gap;
+    let itemStartX = boxX + (boxW - totalW) / 2;
+
+    items.forEach((item, i) => {
+      const ix = itemStartX + i * (itemW + gap);
+      const iy = y + 60;
+
+      ctx.fillStyle = 'white';
+      ctx.strokeStyle = color.border;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.roundRect(ix, iy, itemW, itemH, 10);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = 'bold 22px Microsoft YaHei, sans-serif';
+      ctx.fillStyle = '#000';
+      ctx.fillText(item.main, ix + itemW/2, iy + 36);
+      ctx.font = 'bold 17px Microsoft YaHei, sans-serif';
+      ctx.fillStyle = '#222';
+      ctx.fillText(item.sub, ix + itemW/2, iy + 82);
+    });
+  };
+
+  const drawArrow = (x1, y1, x2, y2) => {
+    ctx.strokeStyle = colors.arrow;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    ctx.fillStyle = colors.arrow;
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - 16 * Math.cos(angle - 0.4), y2 - 16 * Math.sin(angle - 0.4));
+    ctx.lineTo(x2 - 16 * Math.cos(angle + 0.4), y2 - 16 * Math.sin(angle + 0.4));
+    ctx.closePath();
+    ctx.fill();
+  };
+
+  drawLayer(50, '显示层 (Presentation Layer)', colors.display, [
+    { main: 'NDDisplay', sub: 'Canvas 2D渲染' },
+    { main: 'EFISPanel', sub: '控制面板UI' },
+    { main: 'FlightPlanManager', sub: '航路管理界面' }
+  ]);
+
+  drawLayer(330, '控制层 (Control Layer)', colors.control, [
+    { main: 'App.js', sub: '顶层状态管理' },
+    { main: 'FlightPlanContext', sub: '飞行计划状态' },
+    { main: 'VORManagerContext', sub: 'VOR导航状态' },
+    { main: 'RouteEditor', sub: '航路编辑器' }
+  ]);
+
+  drawLayer(610, '服务层 (Service Layer)', colors.service, [
+    { main: 'TerrainWeatherService', sub: '地形与天气服务' },
+    { main: 'MapDataService', sub: '地图数据管理' },
+    { main: 'RenderingOptimizer', sub: '渲染性能优化' }
+  ]);
+
+  drawArrow(W/2 - 140, 270, W/2 - 140, 330);
+  drawArrow(W/2 + 140, 270, W/2 + 140, 330);
+  drawArrow(W/2 - 140, 550, W/2 - 140, 610);
+  drawArrow(W/2 + 140, 550, W/2 + 140, 610);
+
+  // 去掉箭头标注文字
+})();
+
+// ========== 图2: ROSE NAV模式绘制流程图 ==========
+(function() {
+  const canvas = document.getElementById('fig2');
+  const ctx = canvas.getContext('2d');
+  const W = 800, H = 700;
+  ctx.clearRect(0, 0, W, H);
+
+  const boxW = 220, boxH = 50;
+  const colors = {
+    start: 'white', process: 'white', end: 'white'
+  };
+
+  const drawBox = (x, y, text, color) => {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.roundRect(x - boxW/2, y - boxH/2, boxW, boxH, 8);
+    ctx.fill();
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 14px Microsoft YaHei, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    // Handle multiline
+    const lines = text.split('\n');
+    lines.forEach((line, i) => {
+      ctx.fillText(line, x, y + (i - (lines.length-1)/2) * 18);
+    });
+  };
+
+  const drawArrow2 = (x1, y1, x2, y2) => {
+    ctx.strokeStyle = '#666';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    ctx.fillStyle = '#666';
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - 8 * Math.cos(angle - 0.4), y2 - 8 * Math.sin(angle - 0.4));
+    ctx.lineTo(x2 - 8 * Math.cos(angle + 0.4), y2 - 8 * Math.sin(angle + 0.4));
+    ctx.closePath();
+    ctx.fill();
+  };
+
+  // 去掉标题文字
+
+  const cx = W/2;
+  const steps = [
+    { y: 70, text: '开始绘制', color: colors.start },
+    { y: 145, text: '清空画布\nctx.clearRect()', color: colors.process },
+    { y: 220, text: '绘制罗盘\ndrawCompassRose()', color: colors.process },
+    { y: 295, text: '地图投影坐标变换\nworldToScreen()', color: colors.process },
+    { y: 370, text: '绘制飞行计划航路\ndrawRouteWaypoints()', color: colors.process },
+    { y: 445, text: '绘制导航辅助信息\n距离环/方位指针', color: colors.process },
+    { y: 520, text: '绘制数据块\n地速/风速/航路点', color: colors.process },
+    { y: 595, text: '绘制高级功能叠加\nTCAS/天气/地形', color: colors.process },
+    { y: 670, text: '结束', color: colors.end }
+  ];
+
+  steps.forEach((s, i) => {
+    drawBox(cx, s.y, s.text, s.color);
+    if (i < steps.length - 1) {
+      drawArrow2(cx, s.y + boxH/2, cx, steps[i+1].y - boxH/2);
+    }
+  });
+})();
+
+// ========== 图3: VOR模式五阶段流水线架构图（纵向） ==========
+(function() {
+  const canvas = document.getElementById('fig3');
+  const ctx = canvas.getContext('2d');
+  const W = 700, H = 800;
+  ctx.clearRect(0, 0, W, H);
+
+  ctx.font = 'bold 20px Microsoft YaHei, sans-serif';
+  ctx.fillStyle = '#000';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('VOR模式五阶段流水线架构', W/2, 15);
+
+  const stages = [
+    { label: 'VOR台检测', desc1: '三级优先级', desc2: '航路→手动→最近', color: 'white' },
+    { label: '航道计算', desc1: '选定航道与', desc2: '飞机位置夹角', color: 'white' },
+    { label: '偏离计算', desc1: 'VOR径向线', desc2: '公式计算', color: 'white' },
+    { label: 'TO/FROM判断', desc1: '比较相对方位', desc2: '判断向/背台', color: 'white' },
+    { label: '显示渲染', desc1: 'Canvas绘制', desc2: 'CDI/十字杆', color: 'white' }
+  ];
+
+  const stageW = 280, stageH = 100;
+  const gap = 20;
+  const startX = (W - stageW) / 2;
+  const startY = 65;
+
+  stages.forEach((s, i) => {
+    const x = startX;
+    const y = startY + i * (stageH + gap);
+
+    ctx.fillStyle = s.color;
+    ctx.beginPath();
+    ctx.roundRect(x, y, stageW, stageH, 10);
+    ctx.fill();
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 序号圆圈
+    ctx.fillStyle = '#ccc';
+    ctx.beginPath();
+    ctx.arc(x + 30, y + stageH/2, 18, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(i + 1, x + 30, y + stageH/2);
+
+    // 阶段名称
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 18px Microsoft YaHei, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(s.label, x + 60, y + 32);
+
+    // 描述
+    ctx.font = '14px Microsoft YaHei, sans-serif';
+    ctx.fillStyle = '#333';
+    ctx.fillText(s.desc1, x + 60, y + 60);
+    ctx.fillText(s.desc2, x + 60, y + 82);
+
+    // 向下箭头
+    if (i < stages.length - 1) {
+      const ax = W/2;
+      const ay1 = y + stageH;
+      const ay2 = y + stageH + gap;
+      ctx.strokeStyle = '#999';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(ax, ay1);
+      ctx.lineTo(ax, ay2);
+      ctx.stroke();
+      ctx.fillStyle = '#999';
+      ctx.beginPath();
+      ctx.moveTo(ax, ay2);
+      ctx.lineTo(ax - 6, ay2 - 10);
+      ctx.lineTo(ax + 6, ay2 - 10);
+      ctx.closePath();
+      ctx.fill();
+    }
+  });
+
+  // 底部优先级说明框
+  const infoY = startY + stages.length * (stageH + gap) + 10;
+  ctx.fillStyle = '#f5f5f5';
+  ctx.strokeStyle = '#666';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.roundRect(W/2 - 230, infoY, 460, 90, 8);
+  ctx.fill();
+  ctx.stroke();
+  ctx.font = 'bold 14px Microsoft YaHei, sans-serif';
+  ctx.fillStyle = '#000';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('VOR台检测三级优先级：', W/2, infoY + 10);
+  ctx.font = '13px Microsoft YaHei, sans-serif';
+  ctx.fillStyle = '#444';
+  ctx.fillText('① 航路VOR（最高）→ ② 手动调谐VOR → ③ 最近VOR（最低）', W/2, infoY + 35);
+  ctx.fillText('链式判断：依次检查，命中即返回', W/2, infoY + 58);
+})();
+
+// ========== 图4: ILS偏差指示示意图 ==========
+(function() {
+  const canvas = document.getElementById('fig4');
+  const ctx = canvas.getContext('2d');
+  const W = 700, H = 500;
+  ctx.clearRect(0, 0, W, H);
+
+  ctx.font = 'bold 18px Microsoft YaHei, sans-serif';
+  ctx.fillStyle = '#333';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('ILS航向道与下滑道偏差指示', W/2, 10);
+
+  // 左侧：LOC偏差指示
+  const lx = 200, ly = 280;
+  ctx.font = 'bold 14px Microsoft YaHei, sans-serif';
+  ctx.fillStyle = '#1565c0';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('航向道（LOC）偏差指示', lx, 60);
+
+  ctx.strokeStyle = '#999';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(lx - 80, ly);
+  ctx.lineTo(lx + 80, ly);
+  ctx.stroke();
+
+  for (let i = -2; i <= 2; i++) {
+    const x = lx + i * 30;
+    ctx.strokeStyle = i === 0 ? '#ff8f00' : '#999';
+    ctx.lineWidth = i === 0 ? 2 : 1;
+    ctx.beginPath();
+    ctx.moveTo(x, ly - 8);
+    ctx.lineTo(x, ly + 8);
+    ctx.stroke();
+    if (i !== 0) {
+      ctx.font = '10px Arial';
+      ctx.fillStyle = '#999';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(Math.abs(i) + '', x, ly + 12);
+    }
+  }
+
+  const devX = lx - 45;
+  ctx.fillStyle = '#e91e63';
+  ctx.strokeStyle = '#e91e63';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(devX, ly - 12);
+  ctx.lineTo(devX + 8, ly);
+  ctx.lineTo(devX, ly + 12);
+  ctx.lineTo(devX - 8, ly);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.font = '11px Microsoft YaHei, sans-serif';
+  ctx.fillStyle = '#e91e63';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('偏离菱形', devX, ly - 18);
+  ctx.fillStyle = '#888';
+  ctx.textBaseline = 'top';
+  ctx.fillText('每个刻度 = 0.8°', lx, ly + 25);
+
+  // 右侧：GS偏差指示
+  const rx = 500, ry = 280;
+  ctx.font = 'bold 14px Microsoft YaHei, sans-serif';
+  ctx.fillStyle = '#2e7d32';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('下滑道（GS）偏差指示', rx, 60);
+
+  ctx.strokeStyle = '#999';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(rx, ry - 80);
+  ctx.lineTo(rx, ry + 80);
+  ctx.stroke();
+
+  ctx.strokeStyle = '#ff8f00';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(rx - 12, ry);
+  ctx.lineTo(rx + 12, ry);
+  ctx.stroke();
+
+  for (let i = -2; i <= 2; i++) {
+    if (i === 0) continue;
+    const y = ry + i * 30;
+    ctx.fillStyle = 'white';
+    ctx.strokeStyle = '#999';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(rx, y, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  const gsDevY = ry + 30;
+  ctx.fillStyle = '#e91e63';
+  ctx.strokeStyle = '#e91e63';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(rx - 10, gsDevY - 10);
+  ctx.lineTo(rx + 10, gsDevY - 10);
+  ctx.lineTo(rx + 10, gsDevY + 10);
+  ctx.lineTo(rx - 10, gsDevY + 10);
+  ctx.closePath();
+  ctx.stroke();
+
+  ctx.font = '11px Microsoft YaHei, sans-serif';
+  ctx.fillStyle = '#e91e63';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('GS菱形', rx, gsDevY - 15);
+  ctx.fillStyle = '#888';
+  ctx.textBaseline = 'top';
+  ctx.fillText('每个白点 = 0.4°', rx, ry + 95);
+
+  // 右上角ILS信息框
+  ctx.fillStyle = '#f5f5f5';
+  ctx.strokeStyle = '#ccc';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(W - 200, 35, 170, 90, 6);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.font = 'bold 12px Microsoft YaHei, sans-serif';
+  ctx.fillStyle = '#e91e63';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('ILS 110.30', W - 185, 45);
+  ctx.fillStyle = '#1565c0';
+  ctx.fillText('CRS 250°', W - 185, 68);
+  ctx.fillStyle = '#e91e63';
+  ctx.fillText('IMM', W - 185, 90);
+
+  ctx.strokeStyle = '#ccc';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(lx + 80, ly);
+  ctx.lineTo(rx - 80, ry);
+  ctx.stroke();
+  ctx.setLineDash([]);
+})();
+
+// ========== 图5: 动画循环与数据流图 ==========
+(function() {
+  const canvas = document.getElementById('fig5');
+  const ctx = canvas.getContext('2d');
+  const W = 800, H = 450;
+  ctx.clearRect(0, 0, W, H);
+
+  ctx.font = 'bold 18px Microsoft YaHei, sans-serif';
+  ctx.fillStyle = '#333';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('动画循环与数据流图', W/2, 10);
+
+  const drawFlowBox = (x, y, w, h, color, title, desc) => {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, 8);
+    ctx.fill();
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 14px Microsoft YaHei, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(title, x + w/2, y + 25);
+    ctx.font = '12px Microsoft YaHei, sans-serif';
+    ctx.fillStyle = '#333';
+    ctx.fillText(desc, x + w/2, y + 55);
+  };
+
+  const drawArrow3 = (x1, y1, x2, y2, label) => {
+    ctx.strokeStyle = '#666';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    ctx.fillStyle = '#666';
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - 8 * Math.cos(angle - 0.4), y2 - 8 * Math.sin(angle - 0.4));
+    ctx.lineTo(x2 - 8 * Math.cos(angle + 0.4), y2 - 8 * Math.sin(angle + 0.4));
+    ctx.closePath();
+    ctx.fill();
+    if (label) {
+      ctx.font = '11px Microsoft YaHei, sans-serif';
+      ctx.fillStyle = '#888';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(label, (x1+x2)/2, Math.min(y1,y2) - 5);
+    }
+  };
+
+  // 三个核心模块
+  const bw = 180, bh = 80;
+  const cy = 180;
+  drawFlowBox(80, cy, bw, bh, 'white', 'EFIS面板操作', '用户交互输入');
+  drawFlowBox(310, cy, bw, bh, 'white', 'App状态更新', 'setState触发重渲染');
+  drawFlowBox(540, cy, bw, bh, 'white', 'Canvas绘制', 'drawFrame()渲染画面');
+
+  // 箭头
+  drawArrow3(80 + bw, cy + bh/2, 310, cy + bh/2, '回调函数');
+  drawArrow3(310 + bw, cy + bh/2, 540, cy + bh/2, 'Props传递');
+
+  // requestAnimationFrame循环
+  ctx.strokeStyle = '#999';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6, 4]);
+  ctx.beginPath();
+  ctx.moveTo(540 + bw, cy + bh + 20);
+  ctx.lineTo(540 + bw, cy + bh + 60);
+  ctx.lineTo(80, cy + bh + 60);
+  ctx.lineTo(80, cy + bh + 20);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.font = '12px Microsoft YaHei, sans-serif';
+  ctx.fillStyle = '#e91e63';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('requestAnimationFrame 循环驱动', W/2, cy + bh + 65);
+
+  // 底部说明
+  ctx.font = '12px Microsoft YaHei, sans-serif';
+  ctx.fillStyle = '#888';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('数据流：用户操作EFIS面板 → 回调更新App状态 → Props传递给NDDisplay → Canvas重绘', W/2, 350);
+  ctx.fillText('动画循环：requestAnimationFrame每帧更新飞机位置 → setAircraft触发重渲染 → Canvas绘制最新状态', W/2, 375);
+})();
+
+// ========== 图6: EFIS控制面板布局图 ==========
+(function() {
+  const canvas = document.getElementById('fig6');
+  const ctx = canvas.getContext('2d');
+  const W = 800, H = 400;
+  ctx.clearRect(0, 0, W, H);
+
+  ctx.font = 'bold 18px Microsoft YaHei, sans-serif';
+  ctx.fillStyle = '#333';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('EFIS控制面板布局图', W/2, 10);
+
+  // 面板背景
+  ctx.fillStyle = '#c0c0c0';
+  ctx.strokeStyle = '#888';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(30, 45, W - 60, 300, 10);
+  ctx.fill();
+  ctx.stroke();
+
+  // 面板标题
+  ctx.font = 'bold 13px Arial';
+  ctx.fillStyle = '#333';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('EFIS CONTROL PANEL', 50, 55);
+
+  // 功能区1: 模式选择
+  const drawSection = (x, y, w, h, title, items) => {
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.strokeStyle = '#999';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, 5);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.font = '10px Arial';
+    ctx.fillStyle = '#555';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(title, x + w/2, y + 3);
+
+    items.forEach((item, i) => {
+      const ix = x + 10 + i * 55;
+      const iy = y + 18;
+      // 旋钮
+      ctx.fillStyle = '#333';
+      ctx.beginPath();
+      ctx.arc(ix + 18, iy + 18, 14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#666';
+      ctx.beginPath();
+      ctx.arc(ix + 18, iy + 18, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#999';
+      ctx.beginPath();
+      ctx.arc(ix + 18, iy + 18, 3, 0, Math.PI * 2);
+      ctx.fill();
+      // 标签
+      ctx.font = '8px Arial';
+      ctx.fillStyle = '#333';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(item, ix + 18, iy + 38);
+    });
+  };
+
+  // 功能区2: 按钮
+  const drawButtons = (x, y, w, h, title, btnLabels) => {
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.strokeStyle = '#999';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, 5);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.font = '10px Arial';
+    ctx.fillStyle = '#555';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(title, x + w/2, y + 3);
+
+    btnLabels.forEach((label, i) => {
+      const bx = x + 8 + i * 42;
+      const by = y + 18;
+      ctx.fillStyle = '#444';
+      ctx.beginPath();
+      ctx.roundRect(bx, by, 34, 22, 3);
+      ctx.fill();
+      ctx.font = '7px Arial';
+      ctx.fillStyle = '#ddd';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, bx + 17, by + 11);
+    });
+  };
+
+  // 功能区3: VOR调谐
+  const drawVORSection = (x, y, w, h, title) => {
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.strokeStyle = '#999';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, 5);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.font = '10px Arial';
+    ctx.fillStyle = '#555';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(title, x + w/2, y + 3);
+
+    // 频率显示
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.roundRect(x + 15, y + 20, 80, 25, 3);
+    ctx.fill();
+    ctx.font = 'bold 12px Consolas, monospace';
+    ctx.fillStyle = '#0f0';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('114.10', x + 55, y + 32);
+
+    // 小旋钮
+    ctx.fillStyle = '#333';
+    ctx.beginPath();
+    ctx.arc(x + 130, y + 35, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#666';
+    ctx.beginPath();
+    ctx.arc(x + 130, y + 35, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 模式切换按钮
+    ctx.fillStyle = '#444';
+    ctx.beginPath();
+    ctx.roundRect(x + 155, y + 22, 50, 22, 3);
+    ctx.fill();
+    ctx.font = '8px Arial';
+    ctx.fillStyle = '#ddd';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('AUTO/MAN', x + 180, y + 33);
+  };
+
+  // 布局各功能区
+  drawSection(50, 80, 180, 70, 'MODE', ['ROSE NAV', 'ROSE ILS', 'ROSE VOR']);
+  drawSection(250, 80, 120, 70, 'RANGE', ['10', '40', '160']);
+  drawButtons(390, 80, 180, 70, 'DISPLAY', ['TERR', 'WX', 'TFC', 'CHRONO']);
+  drawVORSection(590, 80, 180, 70, 'VOR TUNING');
+
+  // 第二行：更多模式
+  drawSection(50, 170, 180, 70, 'MODE (cont.)', ['ARC', 'PLAN']);
+  drawSection(250, 170, 120, 70, 'RANGE (cont.)', ['20', '80', '320']);
+  drawButtons(390, 170, 180, 70, 'FAILURES', ['FAIL', 'OFF']);
+  drawVORSection(590, 170, 180, 70, 'CRS SELECT');
+
+  // 底部说明
+  ctx.font = '11px Microsoft YaHei, sans-serif';
+  ctx.fillStyle = '#888';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('MODE: 模式选择旋钮  |  RANGE: 量程选择旋钮  |  DISPLAY: 数据显示开关  |  VOR TUNING: VOR调谐控制', W/2, 360);
+})();</script></body></html>

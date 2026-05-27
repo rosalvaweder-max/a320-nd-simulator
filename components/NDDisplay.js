@@ -190,7 +190,10 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
       // ARC Mode: Heading Up.
       // Aircraft at bottom.
       screenOriginY = height * 0.85;
-      pxPerNM = (height * 0.85) / range;
+      // Scale pxPerNM so the 0.75 range arc intersects the screen side edges above midpoint.
+      // compassRadius=430px, 0.75 arc radius=322.5px, intersection at y=392.
+      // Label outer radius = 430+34=464px, top label y=46, well above corner text (y=30-105).
+      pxPerNM = 430 / range;
       mapRotation = -toRad(aircraft.heading); // Rotate world opposite to heading so heading direction aligns with screen UP
 
     } else {
@@ -212,9 +215,16 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
   }, [aircraft.x, aircraft.y, coordinateSystem]);
 
   // Memoize compass radius
+  // ROSE modes: radius = height * 0.38 (~228px) to leave room for corner data blocks
+  // ARC mode:   compass arc IS the outermost range arc, so radius = range * pxPerNM.
+  //             pxPerNM = 430/range, so compassRadius = 430px.
+  //             0.75 arc radius = 322.5px, intersects side edges at y=392.
   const compassRadius = useMemo(() => {
     const { pxPerNM } = coordinateSystem;
-    return (mode === 'ARC') ? range * pxPerNM : (height * 0.45);
+    if (mode === 'ARC') {
+      return range * pxPerNM;
+    }
+    return height * 0.38;
   }, [mode, range, coordinateSystem, height]);
 
   // Function to draw map background layer
@@ -420,97 +430,94 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
                 sy: -(wp.y - mapCenterY) * pxPerNM
             }));
             
-            // Draw path with rounded corners using arcTo
-            const cornerRadius = 80;
+            // Route display: fly-over turns with circular arcs.
+            // The physics engine (App.js) uses proper circular arcs:
+            // aircraft flies straight TO each waypoint, then follows a circular arc
+            // of radius turnRadiusNM, then flies straight to the next waypoint.
+            // The route display shows the planned path with arcs at each waypoint.
+            
+            // Compute turn radius for display (same formula as App.js)
+            const TURN_RATE_RAD_PER_SEC = 3 * Math.PI / 180;
+            const gs = aircraft.gs || 432;
+            const turnRadiusNM = gs / (3600 * TURN_RATE_RAD_PER_SEC);
+            const turnRadiusPx = turnRadiusNM * pxPerNM;
             
             ctx.moveTo(pts[0].sx, pts[0].sy);
             
-            for (let i = 1; i < pts.length - 1; i++) {
-                const prev = pts[i - 1];
+            for (let i = 1; i < pts.length; i++) {
                 const curr = pts[i];
-                const next = pts[i + 1];
                 
-                const d1x = curr.sx - prev.sx;
-                const d1y = curr.sy - prev.sy;
-                const len1 = Math.sqrt(d1x * d1x + d1y * d1y);
-                const d2x = next.sx - curr.sx;
-                const d2y = next.sy - curr.sy;
-                const len2 = Math.sqrt(d2x * d2x + d2y * d2y);
-                
-                if (len1 > 0.1 && len2 > 0.1) {
-                    const u1x = d1x / len1;
-                    const u1y = d1y / len1;
-                    const u2x = d2x / len2;
-                    const u2y = d2y / len2;
+                if (i < pts.length - 1) {
+                    // Intermediate waypoint: draw line to waypoint, then arc
+                    const prev = pts[i - 1];
+                    const next = pts[i + 1];
                     
-                    const dot = u1x * u2x + u1y * u2y;
-                    const angle = Math.acos(Math.max(-1, Math.min(1, dot)));
+                    // Inbound direction in canvas
+                    const inDx = curr.sx - prev.sx;
+                    const inDy = curr.sy - prev.sy;
+                    const inLen = Math.sqrt(inDx * inDx + inDy * inDy);
                     
-                    if (angle > 0.087) {
-                        const r = Math.min(cornerRadius, len1 * 0.4, len2 * 0.4);
+                    // Outbound direction in canvas
+                    const outDx = next.sx - curr.sx;
+                    const outDy = next.sy - curr.sy;
+                    const outLen = Math.sqrt(outDx * outDx + outDy * outDy);
+                    
+                    if (inLen > 0.1 && outLen > 0.1) {
+                        // Compute turn direction.
+                        // In canvas coordinates (y inverted), compute the signed turn angle.
+                        // inbound heading in canvas: atan2(inDy, inDx)
+                        // outbound heading in canvas: atan2(outDy, outDx)
+                        const inHeadingCanvas = Math.atan2(inDy, inDx);
+                        const outHeadingCanvas = Math.atan2(outDy, outDx);
+                        let turnAngleCanvas = outHeadingCanvas - inHeadingCanvas;
+                        // Normalize to [-π, π]
+                        if (turnAngleCanvas > Math.PI) turnAngleCanvas -= 2 * Math.PI;
+                        if (turnAngleCanvas < -Math.PI) turnAngleCanvas += 2 * Math.PI;
+                        // Left turn (heading decreases in aviation) = negative turnAngle in canvas
+                        const isLeftTurn = turnAngleCanvas < 0;
                         
-                        // Calculate the correct distance from corner to tangent points
-                        // For a circular arc of radius r tangent to two lines meeting at angle θ:
-                        // d = r * cot(θ/2) = r * cos(θ/2) / sin(θ/2)
-                        const halfAngle = angle / 2;
-                        const cotHalfAngle = Math.cos(halfAngle) / Math.sin(halfAngle);
-                        const d = r * cotHalfAngle;
+                        // Arc center in canvas coordinates.
+                        // In canvas (y inverted), left perpendicular = (dy, -dx), right perpendicular = (-dy, dx)
+                        const perpX = isLeftTurn ? inDy : -inDy;
+                        const perpY = isLeftTurn ? -inDx : inDx;
+                        const perpLen = Math.sqrt(perpX * perpX + perpY * perpY);
+                        const uPerpX = perpX / perpLen;
+                        const uPerpY = perpY / perpLen;
                         
-                        // Arc start point (d units before the waypoint on incoming leg)
-                        const t1x = curr.sx - u1x * d;
-                        const t1y = curr.sy - u1y * d;
+                        const arcCenterCx = curr.sx + uPerpX * turnRadiusPx;
+                        const arcCenterCy = curr.sy + uPerpY * turnRadiusPx;
                         
-                        // Arc end point (d units after the waypoint on outgoing leg)
-                        const t2x = curr.sx + u2x * d;
-                        const t2y = curr.sy + u2y * d;
+                        // Arc start angle in canvas (from center to waypoint)
+                        const arcStartAngle = Math.atan2(curr.sy - arcCenterCy, curr.sx - arcCenterCx);
                         
-                        // Draw straight line to arc start point
-                        ctx.lineTo(t1x, t1y);
+                        // Outbound direction angle in canvas
+                        const outAngle = Math.atan2(outDy, outDx);
                         
-                        // Calculate arc center from intersection of perpendiculars through t1 and t2
-                        const n1x = -u1y;
-                        const n1y = u1x;
-                        const n2x = -u2y;
-                        const n2y = u2x;
+                        // Arc end angle in canvas.
+                        // Left turn (heading decreases, CW in canvas): tangent = θ - π/2, so θ = outAngle + π/2
+                        // Right turn (heading increases, CCW in canvas): tangent = θ + π/2, so θ = outAngle - π/2
+                        const arcEndAngle = outAngle + (isLeftTurn ? Math.PI / 2 : -Math.PI / 2);
                         
-                        const det = -n1x * n2y + n2x * n1y;
+                        // Draw line to waypoint first
+                        ctx.lineTo(curr.sx, curr.sy);
                         
-                        if (Math.abs(det) > 0.0001) {
-                            const diffX = t2x - t1x;
-                            const diffY = t2y - t1y;
-                            const s = (-n2y * diffX + n2x * diffY) / det;
-                            
-                            const cx = t1x + n1x * s;
-                            const cy = t1y + n1y * s;
-                            
-                            // Use the actual distance from center to t1 as the arc radius
-                            // This ensures the arc passes exactly through t1 and t2
-                            const actualR = Math.abs(s);
-                            
-                            const startAngle = Math.atan2(t1y - cy, t1x - cx);
-                            const endAngle = Math.atan2(t2y - cy, t2x - cx);
-                            
-                            // Determine direction: cross > 0 means left turn (clockwise arc)
-                            const cross = u1x * u2y - u1y * u2x;
-                            const ccw = cross < 0;
-                            
-                            // ctx.arc draws from startAngle to endAngle in the given direction.
-                            // Since the current point is at (t1x, t1y) which IS the arc start,
-                            // ctx.arc will NOT draw an extra line.
-                            ctx.arc(cx, cy, actualR, startAngle, endAngle, ccw);
-                        } else {
-                            ctx.lineTo(curr.sx, curr.sy);
-                        }
+                        // Draw arc on canvas.
+                        // Left turn (heading decreases) = CCW rotation around arc center in world.
+                        // In canvas (y inverted), CCW in world maps to:
+                        //   canvas angle = 90° - aviation_heading
+                        //   aviation heading decreases (CCW) → canvas angle increases (CCW)
+                        // So left turn = CCW in canvas = counterclockwise=true
+                        // Right turn (heading increases) = CW in world → canvas angle decreases (CW)
+                        // So right turn = CW in canvas = counterclockwise=false
+                        ctx.arc(arcCenterCx, arcCenterCy, turnRadiusPx, arcStartAngle, arcEndAngle, isLeftTurn);
                     } else {
                         ctx.lineTo(curr.sx, curr.sy);
                     }
                 } else {
+                    // Last waypoint: just draw line to it
                     ctx.lineTo(curr.sx, curr.sy);
                 }
             }
-            
-            const last = pts[pts.length - 1];
-            ctx.lineTo(last.sx, last.sy);
             
             ctx.stroke();
         }
@@ -689,20 +696,40 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
     ctx.textBaseline = "middle";
     ctx.strokeStyle = COLORS.COMPASS_WHITE;
 
-    const drawRangeRing = (distNM) => {
-        const rPx = distNM * pxPerNM;
+    // For non-ARC modes (ROSE NAV/VOR/LS/PLAN), range rings are based on compassRadius.
+    // compassRadius = height * 0.38 (~228px), which is the fixed compass ring size.
+    // The range ring is drawn at a fixed fraction of compassRadius.
+    const drawRangeRing = (ringRadiusPx, labelNM) => {
         ctx.beginPath();
-        ctx.arc(screenOriginX, screenOriginY, rPx, 0, Math.PI * 2);
+        ctx.arc(screenOriginX, screenOriginY, ringRadiusPx, 0, Math.PI * 2);
         ctx.stroke();
         // Label inside the ring (slightly inward from the top)
         ctx.fillStyle = COLORS.LABEL_CYAN;
-        ctx.fillText(distNM.toString(), screenOriginX, screenOriginY - rPx + 16);
+        ctx.fillText(labelNM.toString(), screenOriginX, screenOriginY - ringRadiusPx + 16);
     };
+
+    // Calculate the angles where the 0.75 arc intersects the screen side edges.
+    // 0.75 arc radius = 0.75 * range * pxPerNM = 0.75 * 430 = 322.5px.
+    // Center at (300, 510), distance to side edges = 300px.
+    // Intersection y = 510 - sqrt(322.5² - 300²) = 510 - 118.3 = 391.7
+    // Left edge intersection angle: atan2(-118.3, -300) = -158.5°
+    // Right edge intersection angle: atan2(-118.3, 300) = -21.5°
+    let arcStartAngle, arcEndAngle;
+    if (mode === 'ARC') {
+        const r75 = 0.75 * range * pxPerNM;  // 322.5px
+        const dy = Math.sqrt(r75 * r75 - 300 * 300);  // 118.3
+        // Angles from center (300,510) to screen side edges at intersection height
+        arcStartAngle = Math.atan2(-dy, -300);  // left edge: -158.5°
+        arcEndAngle = Math.atan2(-dy, 300);     // right edge: -21.5°
+    }
 
     const drawRangeArc = (distNM) => {
         const rPx = distNM * pxPerNM;
         ctx.beginPath();
-        ctx.arc(screenOriginX, screenOriginY, rPx, toRad(-90 - 50), toRad(-90 + 50));
+        // All arcs use the same angular range: from left-edge intersection to right-edge intersection.
+        // 0.75 arc endpoints at screen side edges.
+        // 0.5 and 0.25 arc endpoints lie on the radii from center to the 0.75 arc endpoints.
+        ctx.arc(screenOriginX, screenOriginY, rPx, arcStartAngle, arcEndAngle, false);
         ctx.stroke();
         // Label at top
         ctx.fillStyle = COLORS.LABEL_CYAN;
@@ -710,24 +737,18 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
     };
 
     if (mode === 'ARC') {
-        drawRangeArc(range * 0.25);
-        drawRangeArc(range * 0.5);
         drawRangeArc(range * 0.75);
+        drawRangeArc(range * 0.5);
+        drawRangeArc(range * 0.25);
     } else if (mode === 'NAV') {
-        drawRangeRing(range / 2);
-    } else if (mode === 'VOR') {
-        // VOR mode: two range rings
-        // Large ring matches compass radius, small ring at half
-        // Range numbers written inside the compass
-        const largeRingNM = Math.round(compassRadius / pxPerNM);
-        const smallRingNM = Math.round(largeRingNM / 2);
-        drawRangeRing(smallRingNM);
-        drawRangeRing(largeRingNM);
-    } else if (mode === 'LS') {
-        drawRangeRing(range * 0.25);
-        drawRangeRing(range * 0.5);
+        // ROSE NAV: range ring at 50% of compass radius
+        drawRangeRing(compassRadius * 0.5, Math.round(compassRadius * 0.5 / pxPerNM));
+    } else if (mode === 'VOR' || mode === 'LS') {
+        // VOR and ILS modes: single range ring at 50% of compass radius
+        drawRangeRing(compassRadius * 0.5, Math.round(compassRadius * 0.5 / pxPerNM));
     } else {
-        drawRangeRing(range / 2);
+        // PLAN and other modes: range ring at 50% of compass radius
+        drawRangeRing(compassRadius * 0.5, Math.round(compassRadius * 0.5 / pxPerNM));
     }
     ctx.setLineDash([]);
     ctx.restore();
@@ -790,7 +811,7 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
             console.log('ILS Mode: No waypoint found, using default course:', ilsCourse);
         }
         
-        drawILSInterface(ctx, width, height, aircraft.heading, ilsCourse, locDeviation, gsDeviation, compassRadius, nextWaypoint);
+        drawILSInterface(ctx, width, height, aircraft.heading, ilsCourse, locDeviation, gsDeviation, compassRadius, nextWaypoint, range, coordinateSystem.pxPerNM);
     } else if (mode === 'VOR') {
         // ============================================================
         // PHASE 1: Determine VOR Station Source
@@ -909,7 +930,7 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
         const largeRingNM = Math.round(compassRadius / pxPerNM);
         const smallRingNM = Math.round(largeRingNM / 2);
         const innerRingRadius = smallRingNM * pxPerNM;
-        drawVORInterface(ctx, width, height, aircraft.heading, vorCourse, vorStation, vorDeviation, isToMode, compassRadius, bearingToVOR, innerRingRadius);
+        drawVORInterface(ctx, width, height, aircraft.heading, vorCourse, vorStation, vorDeviation, isToMode, compassRadius, bearingToVOR, innerRingRadius, range, coordinateSystem.pxPerNM);
     }
 
     // --- 8. Data Blocks ---

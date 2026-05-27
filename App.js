@@ -103,17 +103,17 @@ const App = () => {
   // Start at 1 (Flying from 0 -> 1)
   const targetIndexRef = useRef(1);
   
-  // Flight phase: 'STRAIGHT' | 'APPROACH' | 'ARC'
+  // Flight phase: 'STRAIGHT' | 'TURNING'
   const flightPhaseRef = useRef('STRAIGHT');
   
-  // Cached arc data for the current transition (computed once when entering APPROACH)
-  const arcDataRef = useRef(null);
+  // Turn state: arc angle during turn (radians)
+  const turnArcAngleRef = useRef(0);
   
-  // Current angle position along the arc (for continuous arc movement)
-  const arcAngleRef = useRef(0);
+  // Cached turn data (outbound heading, direction, arc center, etc.)
+  const turnDataRef = useRef(null);
   
   // Aircraft position ref for physics engine (avoids setAircraft async issues)
-  const aircraftPosRef = useRef({ x: 0, y: 0 });
+  const aircraftPosRef = useRef({ x: 0, y: 0, gs: 432 });
   
   // 调试信息
   console.log('初始目标索引:', targetIndexRef.current);
@@ -124,8 +124,8 @@ const App = () => {
     y: 0,
     heading: 0, 
     track: 0,
-    gs: 500,
-    tas: 525,
+    gs: 432,
+    tas: 457,
     windDir: 90,
     windSpeed: 25,
     selectedHeading: 0,
@@ -138,7 +138,7 @@ const App = () => {
     if (activeRoute && activeRoute.waypoints.length > 1) {
        const start = activeRoute.waypoints[0];
        const next = activeRoute.waypoints[1];
-       aircraftPosRef.current = { x: start.x, y: start.y };
+       aircraftPosRef.current = { x: start.x, y: start.y, gs: 432 };
        
        // Compute initial heading from first leg
        const initDx = next.x - start.x;
@@ -192,7 +192,12 @@ const App = () => {
     
     // Constants matching NDDisplay.js
     const ND_WIDTH = 600;
-    const CORNER_RADIUS_PX = 80; // Must match NDDisplay.js cornerRadius
+    
+    // Standard rate turn = 3°/s
+    // Turn radius = V / (ω * 3600) where ω = 3°/s in rad/s
+    // At 432 kts: r = 432 / (3600 * π/60) ≈ 2.3 NM
+    const TURN_RATE_DEG_PER_SEC = 3;
+    const TURN_RATE_RAD_PER_SEC = TURN_RATE_DEG_PER_SEC * Math.PI / 180;
     
     const animate = () => {
       const now = Date.now();
@@ -217,15 +222,21 @@ const App = () => {
         return;
       }
 
-      // Calculate pxPerNM based on current range
-      const pxPerNM = ND_WIDTH / (2 * range);
-      const cornerRadiusNM = CORNER_RADIUS_PX / pxPerNM;
-
-      const speedFactor = 6;
+      const gs = aircraftPosRef.current.gs || 432;
+      const speedFactor = 1;
 
       // ==========================================
-      // PHASE 2: Compute arc data (synchronous, outside setAircraft)
+      // PHASE 2: Compute turn data (synchronous)
       // ==========================================
+      // Real A320 fly-over waypoint turn with proper circular arc:
+      // 1. Aircraft flies straight toward the target waypoint
+      // 2. Upon reaching the waypoint, it begins a standard rate turn
+      // 3. During the turn, the aircraft follows a circular arc of radius
+      //    turnRadiusNM, centered at a point perpendicular to the inbound
+      //    heading at distance turnRadiusNM from the waypoint.
+      // 4. When heading matches the outbound leg, resume straight flight
+      //
+      // Turn data is computed once when approaching a waypoint.
       const prevIdx = Math.max(0, currentTargetIdx - 1);
       const prevWpt = route[prevIdx];
       const hasNextWpt = currentTargetIdx < route.length - 1;
@@ -234,8 +245,8 @@ const App = () => {
       const inDy = targetWpt.y - prevWpt.y;
       const inLen = Math.sqrt(inDx * inDx + inDy * inDy);
 
-      // Compute arc data once and cache it (synchronous, outside setAircraft)
-      if (hasNextWpt && !arcDataRef.current) {
+      // Compute turn data only when approaching a waypoint that needs a turn
+      if (hasNextWpt && !turnDataRef.current) {
         const nextWpt = route[currentTargetIdx + 1];
         const outDx = nextWpt.x - targetWpt.x;
         const outDy = nextWpt.y - targetWpt.y;
@@ -250,97 +261,88 @@ const App = () => {
           const angle = Math.acos(Math.max(-1, Math.min(1, dot)));
 
           if (angle > 0.087) { // ~5 degrees minimum
-            const r = Math.min(cornerRadiusNM, inLen * 0.4, outLen * 0.4);
-            const halfAngle = angle / 2;
-            const cotHalfAngle = Math.cos(halfAngle) / Math.sin(halfAngle);
-            const d = r * cotHalfAngle;
+            // Compute inbound heading
+            const inboundHeadingRad = Math.atan2(inDx, inDy);
+            let inboundHeadingDeg = inboundHeadingRad * (180 / Math.PI);
+            if (inboundHeadingDeg < 0) inboundHeadingDeg += 360;
 
-            const arcStartX = targetWpt.x - uInX * d;
-            const arcStartY = targetWpt.y - uInY * d;
-            const arcEndX = targetWpt.x + uOutX * d;
-            const arcEndY = targetWpt.y + uOutY * d;
+            // Compute outbound heading
+            const outboundHeadingRad = Math.atan2(outDx, outDy);
+            let outboundHeadingDeg = outboundHeadingRad * (180 / Math.PI);
+            if (outboundHeadingDeg < 0) outboundHeadingDeg += 360;
 
-            // Find circle center
-            const nInX = -uInY;
-            const nInY = uInX;
-            const nOutX = -uOutY;
-            const nOutY = uOutX;
-            const det = -nInX * nOutY + nOutX * nInY;
+            // Calculate turn angle (signed, negative = left turn / heading decreases)
+            let turnAngle = outboundHeadingDeg - inboundHeadingDeg;
+            // Normalize to [-180, 180]
+            if (turnAngle > 180) turnAngle -= 360;
+            if (turnAngle < -180) turnAngle += 360;
+            const absTurnAngle = Math.abs(turnAngle);
+            // Left turn: heading decreases (turnAngle < 0)
+            // Right turn: heading increases (turnAngle > 0)
+            const isLeftTurn = turnAngle < 0;
 
-            if (Math.abs(det) > 0.0001) {
-              const diffX = arcEndX - arcStartX;
-              const diffY = arcEndY - arcStartY;
-              const t1 = (-nOutY * diffX + nOutX * diffY) / det;
-              const centerX = arcStartX + nInX * t1;
-              const centerY = arcStartY + nInY * t1;
-              const cross = uInX * uOutY - uInY * uOutX;
-              const isClockwise = cross > 0;
-
-              // CRITICAL: Use the actual radius from the center calculation (|t1|),
-              // NOT the desired radius r. The center is computed as the intersection
-              // of perpendicular lines through arcStart/arcEnd, and |t1| is the true
-              // distance from center to arcStart. Using r instead causes the parametric
-              // equation (centerX + r*cos(angle)) to produce positions on a DIFFERENT
-              // circle that does NOT pass through arcStart/arcEnd, resulting in the
-              // "jump to the right" bug when transitioning from APPROACH to ARC.
-              const actualR = Math.abs(t1);
-
-              // Pre-compute start/end angles
-              const toStartX = arcStartX - centerX;
-              const toStartY = arcStartY - centerY;
-              const startAngle = Math.atan2(toStartY, toStartX);
-              const toEndX = arcEndX - centerX;
-              const toEndY = arcEndY - centerY;
-              const endAngle = Math.atan2(toEndY, toEndX);
-
-              // Compute angular span
-              let angularSpan;
-              if (isClockwise) {
-                angularSpan = endAngle - startAngle;
-                if (angularSpan < 0) angularSpan += 2 * Math.PI;
-              } else {
-                angularSpan = startAngle - endAngle;
-                if (angularSpan < 0) angularSpan += 2 * Math.PI;
-              }
-
-              // Trigger distance: when to start APPROACH phase
-              const triggerDist = Math.max(d, Math.min(inLen, outLen) * 0.25);
-
-              // Compute inbound heading (aviation heading of the leg from prevWpt to targetWpt)
-              // Aviation heading: atan2(dx, dy), 0°=north (up=+y), 90°=east (right=+x)
-              // This is the CORRECT aviation heading formula for world (y=North) coordinate system.
-              // Verified: atan2(dx, dy) gives correct heading for all directions including diagonals.
-              const inboundHeadingRad = Math.atan2(inDx, inDy);
-              let inboundHeadingDeg = inboundHeadingRad * (180 / Math.PI);
-              if (inboundHeadingDeg < 0) inboundHeadingDeg += 360;
-
-              arcDataRef.current = {
-                arcStartX, arcStartY,
-                arcEndX, arcEndY,
-                centerX, centerY,
-                r: actualR, d,
-                uInX, uInY,
-                uOutX, uOutY,
-                isClockwise,
-                nextWpt,
-                startAngle, endAngle,
-                angularSpan,
-                triggerDist,
-                inboundHeadingDeg
-              };
-              console.log('ARC data computed: desiredR=' + r.toFixed(2) + ' actualR=' + actualR.toFixed(2) + ' d=' + d.toFixed(2) + ' angle=' + (angle*180/Math.PI).toFixed(1) + 'deg span=' + (angularSpan*180/Math.PI).toFixed(1) + 'deg cw=' + isClockwise);
-            }
+            // Compute turn radius in NM
+            const turnRadiusNM = gs / (3600 * TURN_RATE_RAD_PER_SEC);
+            
+            // For fly-over turn: arc center is perpendicular to inbound heading
+            // at distance turnRadiusNM from the waypoint.
+            // Left turn (heading decreases): center is to the LEFT of inbound direction.
+            //   In aviation heading: left = heading - 90°
+            // Right turn (heading increases): center is to the RIGHT of inbound direction.
+            //   In aviation heading: right = heading + 90°
+            const perpAngleRad = inboundHeadingRad + (isLeftTurn ? -Math.PI / 2 : Math.PI / 2);
+            const arcCenterX = targetWpt.x + Math.sin(perpAngleRad) * turnRadiusNM;
+            const arcCenterY = targetWpt.y + Math.cos(perpAngleRad) * turnRadiusNM;
+            
+            // Arc start angle: angle from arc center to waypoint
+            // Uses atan2(dx, dy) which returns aviation heading (0°=north, CW)
+            const arcStartAngle = Math.atan2(targetWpt.x - arcCenterX, targetWpt.y - arcCenterY);
+            
+            // Total arc angle: the signed angular distance the aircraft travels along the arc.
+            // Left turn (heading decreases) = CCW rotation in world:
+            //   aviation heading angle DECREASES along the arc
+            //   totalArcAngle should be NEGATIVE
+            // Right turn (heading increases) = CW rotation in world:
+            //   aviation heading angle INCREASES along the arc
+            //   totalArcAngle should be POSITIVE
+            const absTurnAngleRad = absTurnAngle * Math.PI / 180;
+            const totalArcAngle = isLeftTurn ? -absTurnAngleRad : absTurnAngleRad;
+            
+            // Arc end angle: arcStartAngle + totalArcAngle
+            // (the angle at the arc center corresponding to the end of the turn)
+            let arcEndAngle = arcStartAngle + totalArcAngle;
+            // Normalize to [-π, π]
+            if (arcEndAngle > Math.PI) arcEndAngle -= 2 * Math.PI;
+            if (arcEndAngle < -Math.PI) arcEndAngle += 2 * Math.PI;
+            
+            // Store turn data with arc geometry
+            turnDataRef.current = {
+              inboundHeadingDeg,
+              outboundHeadingDeg,
+              isLeftTurn,
+              turnAngle,
+              absTurnAngle,
+              nextWpt,
+              uOutX, uOutY,
+              // Arc geometry
+              arcCenterX,
+              arcCenterY,
+              arcStartAngle,
+              arcEndAngle,
+              totalArcAngle,
+              turnRadiusNM
+            };
+            console.log('TURN data: inbound=' + inboundHeadingDeg.toFixed(1) + ' outbound=' + outboundHeadingDeg.toFixed(1) + ' angle=' + absTurnAngle.toFixed(1) + '° ' + (isLeftTurn ? 'LEFT' : 'RIGHT'));
           }
         }
       }
 
-      const arcData = arcDataRef.current;
+      const turnData = turnDataRef.current;
 
       // ==========================================
       // PHASE 3: Get current aircraft position from ref
       // ==========================================
       const pos = aircraftPosRef.current;
-      const gs = 500; // Default GS, will be updated from setAircraft
 
       // Distance to current target waypoint
       const dx = targetWpt.x - pos.x;
@@ -351,44 +353,102 @@ const App = () => {
       const moveDist = nmPerSec * dt;
 
       // ==========================================
-      // PHASE 4: Flight phase management (synchronous, outside setAircraft)
+      // PHASE 4: Flight phase management & movement
       // ==========================================
+      // Fly-over waypoint turn with proper circular arc:
+      //   STRAIGHT: Fly directly toward the target waypoint
+      //   Upon reaching waypoint: enter TURNING phase
+      //   TURNING: Aircraft follows a circular arc of radius turnRadiusNM
+      //     - Arc center is perpendicular to inbound heading at turnRadiusNM from waypoint
+      //     - Position moves along the arc, heading is tangent to the arc
+      //     - When arc is complete (heading matches outbound), resume STRAIGHT
       
-      // 1. ARRIVAL CHECK
-      // During ARC phase, use distance to arcEnd instead of targetWpt to prevent premature termination
-      if (flightPhaseRef.current === 'ARC' && arcData) {
-        const toArcEndX = arcData.arcEndX - pos.x;
-        const toArcEndY = arcData.arcEndY - pos.y;
-        const distToArcEnd = Math.sqrt(toArcEndX * toArcEndX + toArcEndY * toArcEndY);
+      let newPos;
+      let newHeading;
+      let newNextWptId = targetWpt.id;
+
+      // --- PHASE: TURNING (proper circular arc) ---
+      if (flightPhaseRef.current === 'TURNING' && turnData) {
+        // Current arc angle
+        let currentAngle = turnArcAngleRef.current;
         
-        if (distToArcEnd < 0.3) {
-          console.log('ARC complete via arrival check, distToArcEnd:', distToArcEnd.toFixed(3));
+        // Angular step along the arc: arcLength / radius = (speed * dt) / radius
+        const angularStep = moveDist / turnData.turnRadiusNM;
+        
+        // Advance the angle along the arc.
+        // Left turn (heading decreases) = CCW rotation in world:
+        //   aviation heading angle DECREASES along CCW arc
+        // Right turn (heading increases) = CW rotation in world:
+        //   aviation heading angle INCREASES along CW arc
+        let newAngle = currentAngle + (turnData.isLeftTurn ? -angularStep : angularStep);
+        
+        // Check if we've completed the arc.
+        // totalArcAngle is the signed angular distance from arcStartAngle to arcEndAngle.
+        // For left turns (CCW in world): totalArcAngle is negative (aviation heading decreases)
+        // For right turns (CW in world): totalArcAngle is positive (aviation heading increases)
+        // We've completed the arc when the angle has traveled past arcEndAngle.
+        const angleTraveled = newAngle - turnData.arcStartAngle;
+        
+        // For left turns (negative totalArcAngle): completed when angleTraveled <= totalArcAngle
+        // For right turns (positive totalArcAngle): completed when angleTraveled >= totalArcAngle
+        const arcComplete = (turnData.isLeftTurn && angleTraveled <= turnData.totalArcAngle) ||
+                            (!turnData.isLeftTurn && angleTraveled >= turnData.totalArcAngle);
+        
+        if (arcComplete) {
+          // Arc complete - resume straight flight
+          console.log('TURN complete (arc)');
           flightPhaseRef.current = 'STRAIGHT';
-          arcDataRef.current = null;
-          arcAngleRef.current = 0;
+          turnDataRef.current = null;
+          turnArcAngleRef.current = 0;
           targetIndexRef.current = currentTargetIdx + 1;
           
-          const newLegDx = arcData.nextWpt.x - arcData.arcEndX;
-          const newLegDy = arcData.nextWpt.y - arcData.arcEndY;
-          let newLegHeading = Math.atan2(newLegDx, newLegDy) * (180 / Math.PI);
-          if (newLegHeading < 0) newLegHeading += 360;
+          // Position at arc end point
+          const endAngle = turnData.arcEndAngle;
+          newPos = {
+            x: turnData.arcCenterX + Math.sin(endAngle) * turnData.turnRadiusNM,
+            y: turnData.arcCenterY + Math.cos(endAngle) * turnData.turnRadiusNM
+          };
           
-          aircraftPosRef.current = { x: arcData.arcEndX, y: arcData.arcEndY };
-          setAircraft(a => ({ ...a, x: arcData.arcEndX, y: arcData.arcEndY, heading: newLegHeading, track: newLegHeading, selectedHeading: newLegHeading, nextWaypointId: arcData.nextWpt.id }));
-          animationFrameId = requestAnimationFrame(animate);
-          return;
+          // Move forward along outbound heading
+          const headingRad = turnData.outboundHeadingDeg * Math.PI / 180;
+          newPos = {
+            x: newPos.x + Math.sin(headingRad) * moveDist,
+            y: newPos.y + Math.cos(headingRad) * moveDist
+          };
+          
+          newHeading = turnData.outboundHeadingDeg;
+          newNextWptId = turnData.nextWpt.id;
+        } else {
+          // Still on the arc - compute position from arc center and angle
+          turnArcAngleRef.current = newAngle;
+          
+          // Position on the arc
+          newPos = {
+            x: turnData.arcCenterX + Math.sin(newAngle) * turnData.turnRadiusNM,
+            y: turnData.arcCenterY + Math.cos(newAngle) * turnData.turnRadiusNM
+          };
+          
+          // Heading is tangent to the arc:
+          // Left turn (CCW rotation in world): heading = angle - 90° (heading decreases along CCW arc)
+          // Right turn (CW rotation in world): heading = angle + 90° (heading increases along CW arc)
+          const tangentAngleRad = newAngle + (turnData.isLeftTurn ? -Math.PI / 2 : Math.PI / 2);
+          newHeading = tangentAngleRad * (180 / Math.PI);
+          if (newHeading < 0) newHeading += 360;
+          
+          newNextWptId = targetWpt.id;
         }
-      } else if (distToTarget < 0.5) {
-         console.log('到达目标:', targetWpt.name, '当前索引:', currentTargetIdx);
-         
-         // Reset flight phase
-         flightPhaseRef.current = 'STRAIGHT';
-         arcDataRef.current = null;
-         arcAngleRef.current = 0;
-         
-         if (currentTargetIdx === route.length - 1) {
+      }
+      // --- PHASE: STRAIGHT (default) ---
+      else {
+        // Check if we've reached the target waypoint
+        if (distToTarget < 0.3) {
+          console.log('到达目标:', targetWpt.name, '当前索引:', currentTargetIdx);
+          
+          if (currentTargetIdx === route.length - 1) {
             // Loop back to start
             console.log('到达最后一个航路点，重新开始循环');
+            flightPhaseRef.current = 'STRAIGHT';
+            turnDataRef.current = null;
             const newStartWpt = route[0];
             const newEndWpt = route[1];
             const legDx = newEndWpt.x - newStartWpt.x;
@@ -396,12 +456,44 @@ const App = () => {
             let legHeading = Math.atan2(legDx, legDy) * (180 / Math.PI);
             if (legHeading < 0) legHeading += 360;
             targetIndexRef.current = 1;
-            aircraftPosRef.current = { x: newStartWpt.x, y: newStartWpt.y };
+            aircraftPosRef.current = { x: newStartWpt.x, y: newStartWpt.y, gs: aircraftPosRef.current.gs || 432 };
             setAircraft(a => ({ ...a, x: newStartWpt.x, y: newStartWpt.y, heading: legHeading, track: legHeading, selectedHeading: legHeading, nextWaypointId: newEndWpt.id }));
             animationFrameId = requestAnimationFrame(animate);
             return;
-         } else {
-            // Advance to next waypoint
+          }
+          
+          // Check if a turn is needed
+          if (turnData) {
+            // Start turning - begin circular arc from waypoint
+              flightPhaseRef.current = 'TURNING';
+              turnArcAngleRef.current = turnData.arcStartAngle;
+              console.log('-> TURNING phase at waypoint:', targetWpt.name,
+                'inbound:', turnData.inboundHeadingDeg.toFixed(1),
+                '-> outbound:', turnData.outboundHeadingDeg.toFixed(1),
+                'radius:', turnData.turnRadiusNM.toFixed(2), 'NM');
+              
+              // First step along the arc
+              // Left turn (CCW in world): aviation heading angle decreases
+              // Right turn (CW in world): aviation heading angle increases
+              const angularStep = moveDist / turnData.turnRadiusNM;
+              const firstAngle = turnData.arcStartAngle + (turnData.isLeftTurn ? -angularStep : angularStep);
+              turnArcAngleRef.current = firstAngle;
+              
+              // Position on the arc
+              newPos = {
+                x: turnData.arcCenterX + Math.sin(firstAngle) * turnData.turnRadiusNM,
+                y: turnData.arcCenterY + Math.cos(firstAngle) * turnData.turnRadiusNM
+              };
+              
+              // Heading tangent to the arc
+              // Left turn (CCW in world): heading = angle - 90°
+              // Right turn (CW in world): heading = angle + 90°
+              const tangentAngleRad = firstAngle + (turnData.isLeftTurn ? -Math.PI / 2 : Math.PI / 2);
+              newHeading = tangentAngleRad * (180 / Math.PI);
+              if (newHeading < 0) newHeading += 360;
+              newNextWptId = targetWpt.id;
+          } else {
+            // No turn needed - advance to next waypoint
             const nextIdx = currentTargetIdx + 1;
             const newStartWpt = targetWpt;
             const newEndWpt = route[nextIdx];
@@ -410,219 +502,44 @@ const App = () => {
             let legHeading = Math.atan2(legDx, legDy) * (180 / Math.PI);
             if (legHeading < 0) legHeading += 360;
             targetIndexRef.current = nextIdx;
-            aircraftPosRef.current = { x: newStartWpt.x, y: newStartWpt.y };
+            aircraftPosRef.current = { x: newStartWpt.x, y: newStartWpt.y, gs: aircraftPosRef.current.gs || 432 };
             setAircraft(a => ({ ...a, x: newStartWpt.x, y: newStartWpt.y, heading: legHeading, track: legHeading, selectedHeading: legHeading, nextWaypointId: newEndWpt.id }));
             animationFrameId = requestAnimationFrame(animate);
             return;
-         }
-      }
-
-      // 2. APPROACH phase detection
-      if (arcData && flightPhaseRef.current === 'STRAIGHT') {
-        const acDx = pos.x - prevWpt.x;
-        const acDy = pos.y - prevWpt.y;
-        const projT = Math.max(0, Math.min(inLen, acDx * arcData.uInX + acDy * arcData.uInY));
-        const distFromProjToTarget = inLen - projT;
-
-        if (distFromProjToTarget <= arcData.triggerDist) {
-          flightPhaseRef.current = 'APPROACH';
-          console.log('-> APPROACH phase started, distToTarget:', distToTarget.toFixed(2), 'triggerDist:', arcData.triggerDist.toFixed(2));
-        }
-      }
-
-      // 3. ARC phase detection — REMOVED
-      // The ARC phase is now entered exclusively through the APPROACH phase execution
-      // (when the aircraft reaches arcStart within 0.05 NM). This eliminates the conflict
-      // between two paths entering ARC (via projection check vs. via distance-to-arcStart check).
-      // The old projection-based ARC detection could set arcAngleRef to a wrong intermediate
-      // position (arcFrac), causing the aircraft to "jump to the right" instead of starting
-      // smoothly from arcStart.
-
-      // ==========================================
-      // PHASE 5: EXECUTE MOVEMENT (synchronous)
-      // ==========================================
-      
-      let newPos;
-      let newHeading;
-      let newNextWptId = targetWpt.id;
-
-      // --- PHASE: ARC ---
-      if (flightPhaseRef.current === 'ARC' && arcData) {
-        // Ensure the current angle is within valid range
-        // Clamp to [startAngle, endAngle] to prevent accumulated errors from pushing the angle outside
-        let currentAngle = arcAngleRef.current;
-        
-        // Compute angular step for this frame
-        const angularStep = moveDist / arcData.r;
-        let newAngle;
-        if (arcData.isClockwise) {
-          newAngle = currentAngle + angularStep;
-        } else {
-          newAngle = currentAngle - angularStep;
-        }
-        arcAngleRef.current = newAngle;
-
-        // Force position onto the arc circle using parametric equation
-        // This guarantees the aircraft stays exactly on the arc path
-        const newArcX = arcData.centerX + arcData.r * Math.cos(newAngle);
-        const newArcY = arcData.centerY + arcData.r * Math.sin(newAngle);
-
-        // Compute aircraft heading directly from arc geometry.
-        // The heading at any point on the arc is:
-        //   heading = inboundHeading ∓ anglePastStart
-        //   (- for CCW/left turn, + for CW/right turn)
-        //
-        // This is because for a LEFT turn (CCW), the parametric angle increases
-        // but the heading DECREASES (turning left = heading decreases).
-        // For a RIGHT turn (CW), the parametric angle decreases
-        // but the heading INCREASES (turning right = heading increases).
-        //
-        // This is mathematically guaranteed to be correct because:
-        // - At anglePastStart=0: heading = inboundHeading (tangent to inbound leg)
-        // - At anglePastStart=angularSpan: heading = outboundHeading (tangent to outbound leg)
-        // - In between: heading changes linearly with the angle traveled
-        //
-        // This approach is more robust than:
-        // - The parametric formula (atan2(sin(θ), cos(θ)) = θ), which depends on correct isClockwise
-        // - The position-delta approach (atan2(dx, dy)), which is sensitive to numerical noise
-        //   and gives the chord direction (midpoint heading) rather than the tangent direction
-        let anglePastStartDeg;
-        if (arcData.isClockwise) {
-          anglePastStartDeg = (newAngle - arcData.startAngle) * (180 / Math.PI);
-          if (anglePastStartDeg < 0) anglePastStartDeg += 360;
-        } else {
-          anglePastStartDeg = (arcData.startAngle - newAngle) * (180 / Math.PI);
-          if (anglePastStartDeg < 0) anglePastStartDeg += 360;
-        }
-        
-        // For a LEFT turn (CCW, isClockwise=true), the parametric angle increases
-        // but the heading DECREASES (turning left = heading decreases).
-        // For a RIGHT turn (CW, isClockwise=false), the parametric angle decreases
-        // but the heading INCREASES (turning right = heading increases).
-        // So the sign is OPPOSITE to isClockwise.
-        if (arcData.isClockwise) {
-          // LEFT turn (CCW): heading decreases as angle increases
-          newHeading = arcData.inboundHeadingDeg - anglePastStartDeg;
-        } else {
-          // RIGHT turn (CW): heading increases as angle decreases
-          newHeading = arcData.inboundHeadingDeg + anglePastStartDeg;
-        }
-        // Normalize to [0, 360)
-        newHeading = ((newHeading % 360) + 360) % 360;
-        
-        // Debug heading frequently during ARC
-        if (typeof window._arcFrameCount === 'undefined') window._arcFrameCount = 0;
-        window._arcFrameCount++;
-        // Log every 5 frames
-        if (window._arcFrameCount % 5 === 0) {
-          // Also compute parametric heading for comparison
-          let paramHeadingRad;
-          if (arcData.isClockwise) {
-            paramHeadingRad = newAngle + Math.PI;
-          } else {
-            paramHeadingRad = newAngle;
           }
-          paramHeadingRad = ((paramHeadingRad % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-          const paramHeadingDeg = paramHeadingRad * (180 / Math.PI);
+        } else {
+          // Fly straight toward the target waypoint
+          const legDx = targetWpt.x - pos.x;
+          const legDy = targetWpt.y - pos.y;
+          const legLen = Math.sqrt(legDx * legDx + legDy * legDy);
           
-          console.log('ARC heading debug:',
-            'θ(deg):', (newAngle * 180 / Math.PI).toFixed(1),
-            'inbound:', arcData.inboundHeadingDeg.toFixed(1),
-            'pastStart:', anglePastStartDeg.toFixed(1),
-            'span(deg):', (arcData.angularSpan * 180 / Math.PI).toFixed(1),
-            'cw:', arcData.isClockwise,
-            'geoHeading:', newHeading.toFixed(1),
-            'paramHeading:', paramHeadingDeg.toFixed(1),
-            'diff:', (newHeading - paramHeadingDeg).toFixed(1));
-        }
-
-        // anglePastStartDeg is already computed above for the heading calculation
-        const anglePastStartRad = anglePastStartDeg * (Math.PI / 180);
-        const passedEnd = anglePastStartRad >= arcData.angularSpan - 0.01;
-
-        if (passedEnd) {
-          // Snap to arcEnd precisely to prevent any deviation
-          flightPhaseRef.current = 'STRAIGHT';
-          arcDataRef.current = null;
-          arcAngleRef.current = 0;
-          targetIndexRef.current = currentTargetIdx + 1;
-
-          const newLegDx = arcData.nextWpt.x - arcData.arcEndX;
-          const newLegDy = arcData.nextWpt.y - arcData.arcEndY;
-          let newLegHeading = Math.atan2(newLegDx, newLegDy) * (180 / Math.PI);
-          if (newLegHeading < 0) newLegHeading += 360;
-
-          console.log('ARC complete via passedEnd, advancing to:', arcData.nextWpt.name, 'anglePastStart:', anglePastStartDeg.toFixed(1), 'span:', (arcData.angularSpan*180/Math.PI).toFixed(1));
-          newPos = { x: arcData.arcEndX, y: arcData.arcEndY };
-          // Sync aircraftPosRef immediately to arcEnd
-          aircraftPosRef.current = newPos;
-          newHeading = newLegHeading;
-          newNextWptId = arcData.nextWpt.id;
-        } else {
-          newPos = { x: newArcX, y: newArcY };
-          // Log first few ARC frames for debugging
-          if (Math.abs(anglePastStartDeg) < 3) {
-            console.log('ARC moving, angle:', (newAngle*180/Math.PI).toFixed(2), 'pastStart:', anglePastStartDeg.toFixed(2), 'heading:', newHeading.toFixed(1), 'pos:', newArcX.toFixed(2), newArcY.toFixed(2));
+          if (legLen > 0.001) {
+            const uLegX = legDx / legLen;
+            const uLegY = legDy / legLen;
+            
+            const legHeadingRad = Math.atan2(legDx, legDy);
+            newHeading = legHeadingRad * (180 / Math.PI);
+            if (newHeading < 0) newHeading += 360;
+            
+            const moveAmount = Math.min(moveDist, legLen);
+            const newX = pos.x + uLegX * moveAmount;
+            const newY = pos.y + uLegY * moveAmount;
+            
+            if (Math.abs(newX - pos.x) < 0.0001 && Math.abs(newY - pos.y) < 0.0001) {
+              animationFrameId = requestAnimationFrame(animate);
+              return;
+            }
+            
+            newPos = { x: newX, y: newY };
+          } else {
+            animationFrameId = requestAnimationFrame(animate);
+            return;
           }
         }
-      }
-      // --- PHASE: APPROACH ---
-      else if (flightPhaseRef.current === 'APPROACH' && arcData) {
-        const toArcStartX = arcData.arcStartX - pos.x;
-        const toArcStartY = arcData.arcStartY - pos.y;
-        const distToArcStart = Math.sqrt(toArcStartX * toArcStartX + toArcStartY * toArcStartY);
-
-        if (distToArcStart > 0.05) {
-          const approachSpeed = Math.min(moveDist, distToArcStart);
-          const approachX = pos.x + (toArcStartX / distToArcStart) * approachSpeed;
-          const approachY = pos.y + (toArcStartY / distToArcStart) * approachSpeed;
-          let approachHeading = Math.atan2(toArcStartX, toArcStartY) * (180 / Math.PI);
-          if (approachHeading < 0) approachHeading += 360;
-          newPos = { x: approachX, y: approachY };
-          newHeading = approachHeading;
-          console.log('APPROACH moving to arcStart, dist:', distToArcStart.toFixed(4), 'pos:', pos.x.toFixed(2), pos.y.toFixed(2), 'arcStart:', arcData.arcStartX.toFixed(2), arcData.arcStartY.toFixed(2));
-        } else {
-          // Snap to arcStart precisely, then transition to ARC
-          // Set position to arcStart and angle to startAngle
-          // Do NOT execute ARC movement in the same frame to avoid angularStep jump
-          flightPhaseRef.current = 'ARC';
-          arcAngleRef.current = arcData.startAngle;
-          // Set both ref and newPos to arcStart for seamless transition
-          aircraftPosRef.current = { x: arcData.arcStartX, y: arcData.arcStartY };
-          newPos = { x: arcData.arcStartX, y: arcData.arcStartY };
-          // Set heading to the tangent direction at arcStart
-          // Using the same inboundHeadingDeg approach as the ARC phase:
-          // At anglePastStart=0, heading = inboundHeadingDeg
-          newHeading = arcData.inboundHeadingDeg;
-          console.log('-> APPROACH->ARC (snapped to arcStart), angle:', arcAngleRef.current.toFixed(3), 'heading:', newHeading.toFixed(1), 'arcStart:', arcData.arcStartX.toFixed(2), arcData.arcStartY.toFixed(2), 'center:', arcData.centerX.toFixed(2), arcData.centerY.toFixed(2), 'r:', arcData.r.toFixed(2));
-        }
-      }
-      // --- PHASE: STRAIGHT (default) ---
-      else {
-        const legDx = targetWpt.x - prevWpt.x;
-        const legDy = targetWpt.y - prevWpt.y;
-        // Position calculation uses atan2(dx, dy) which gives the correct direction
-        // in canvas coordinates for moving from prevWpt toward targetWpt.
-        const legMoveRad = Math.atan2(legDx, legDy);
-        // Heading display uses atan2(dx, dy) which is the CORRECT aviation heading
-        // formula (0°=north, 90°=east) for world (y=North) coordinate system.
-        const legHeadingRad = Math.atan2(legDx, legDy);
-        newHeading = legHeadingRad * (180 / Math.PI);
-        if (newHeading < 0) newHeading += 360;
-
-        const newX = pos.x + Math.sin(legMoveRad) * moveDist;
-        const newY = pos.y + Math.cos(legMoveRad) * moveDist;
-
-        if (Math.abs(newX - pos.x) < 0.0001 && Math.abs(newY - pos.y) < 0.0001) {
-          animationFrameId = requestAnimationFrame(animate);
-          return;
-        }
-
-        newPos = { x: newX, y: newY };
       }
 
       // Update aircraft position ref (synchronous)
-      aircraftPosRef.current = newPos;
+      aircraftPosRef.current = { ...newPos, gs: aircraftPosRef.current.gs || 432 };
 
       // Update React state (async, but refs are already updated)
       setAircraft(a => ({
@@ -835,9 +752,9 @@ const App = () => {
             ])
           ]),
 
-          // Speed Slider
+          // Speed Multiplier
           React.createElement('div', {
-            key: 'speed-slider',
+            key: 'speed-multiplier',
             className: 'pt-3 border-t border-gray-800'
           }, [
             React.createElement('div', {
@@ -846,26 +763,30 @@ const App = () => {
             }, [
               React.createElement('label', {
                 key: 'speed-label',
-            }, 'Speed Control'),
+            }, 'Speed Multiplier'),
             React.createElement('span', {
               key: 'speed-value',
               className: 'text-cyan-500 font-mono text-xs'
-            }, aircraft.gs + ' kts')
+            }, '×' + (aircraft.gs / 432).toFixed(1))
           ]),
           React.createElement('input', {
             key: 'speed-input',
-            type: 'range', 
-            min: '0', 
-            max: '1000', 
-            step: '10',
-            value: aircraft.gs,
+            type: 'range',
+            min: '0.5',
+            max: '4',
+            step: '0.5',
+            value: (aircraft.gs / 432).toFixed(1),
             onChange: (e) => {
-              const newSpeed = parseInt(e.target.value);
+              const multiplier = parseFloat(e.target.value);
+              const baseSpeed = 432; // ~0.12 NM/s base speed
+              const newGs = Math.round(baseSpeed * multiplier);
               setAircraft(prev => ({
                 ...prev,
-                gs: newSpeed,
-                tas: newSpeed + 25
+                gs: newGs,
+                tas: newGs + 25
               }));
+              // Sync ref for animate loop
+              aircraftPosRef.current = { ...aircraftPosRef.current, gs: newGs };
             },
             className: 'w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500 hover:accent-cyan-400 transition-all'
           }),
@@ -875,13 +796,13 @@ const App = () => {
           }, [
             React.createElement('span', {
               key: 'speed-min',
-            }, '0'),
+            }, '×0.5'),
             React.createElement('span', {
               key: 'speed-mid',
-            }, '500'),
+            }, '×1'),
             React.createElement('span', {
               key: 'speed-max',
-            }, '1000')
+            }, '×4')
           ])
         ]),
 
