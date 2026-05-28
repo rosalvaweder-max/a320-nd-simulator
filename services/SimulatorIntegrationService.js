@@ -1,12 +1,12 @@
 /**
- * Flight Simulator Integration Service
- * Connects to X-Plane, MSFS, or provides mock data for A320 ND simulation
+ * 飞行模拟器集成服务
+ * 连接 X-Plane、MSFS 或提供模拟数据，用于 A320 ND 显示仿真
  */
 
 import { NAV } from '../constants.js';
 
 /**
- * Simulator Types
+ * 模拟器类型
  */
 export const SIMULATOR_TYPES = {
     XPLANE: 'XPLANE',
@@ -16,63 +16,63 @@ export const SIMULATOR_TYPES = {
 };
 
 /**
- * Data Update Rates (Hz)
+ * 数据更新速率（Hz）
  */
 export const UPDATE_RATES = {
-    HIGH: 30,   // 30Hz for critical flight data
-    MEDIUM: 10, // 10Hz for navigation data
-    LOW: 2      // 2Hz for weather/terrain
+    HIGH: 30,   // 30Hz 关键飞行数据
+    MEDIUM: 10, // 10Hz 导航数据
+    LOW: 2      // 2Hz 天气/地形数据
 };
 
 /**
- * Flight Data Structure
+ * 飞行数据结构
  */
 export class FlightData {
     constructor() {
-        // Position and Attitude
+        // 位置与姿态
         this.latitude = 0;
         this.longitude = 0;
-        this.altitude = 0;          // feet MSL
-        this.heading = 0;           // degrees true
-        this.pitch = 0;             // degrees
-        this.bank = 0;              // degrees
-        this.yaw = 0;               // degrees
+        this.altitude = 0;          // 英尺 MSL（平均海平面）
+        this.heading = 0;           // 真航向（度）
+        this.pitch = 0;             // 俯仰角（度）
+        this.bank = 0;              // 坡度（度）
+        this.yaw = 0;               // 偏航角（度）
         
-        // Speed
-        this.indicatedAirspeed = 0; // knots
-        this.trueAirspeed = 0;      // knots
-        this.groundSpeed = 0;       // knots
-        this.mach = 0;              // Mach number
-        this.verticalSpeed = 0;     // feet per minute
+        // 速度
+        this.indicatedAirspeed = 0; // 指示空速（节）
+        this.trueAirspeed = 0;      // 真空速（节）
+        this.groundSpeed = 0;       // 地速（节）
+        this.mach = 0;              // 马赫数
+        this.verticalSpeed = 0;     // 垂直速度（英尺/分钟）
         
-        // Navigation
-        this.course = 0;            // degrees true
-        this.track = 0;             // degrees true
-        this.driftAngle = 0;        // degrees
-        this.windDirection = 0;     // degrees true
-        this.windSpeed = 0;         // knots
+        // 导航
+        this.course = 0;            // 航向（真角度）
+        this.track = 0;             // 航迹（真角度）
+        this.driftAngle = 0;        // 偏流角（度）
+        this.windDirection = 0;     // 风向（真角度）
+        this.windSpeed = 0;         // 风速（节）
         
-        // Systems
+        // 系统状态
         this.autopilotEngaged = false;
         this.fdEngaged = false;
         this.autothrottleEngaged = false;
-        this.flightPhase = 'CRUISE'; // TAKEOFF, CLIMB, CRUISE, DESCENT, APPROACH, LANDING
+        this.flightPhase = 'CRUISE'; // 起飞、爬升、巡航、下降、进近、着陆
         
-        // Time
+        // 时间
         this.timestamp = Date.now();
         this.simTime = 0;
-        this.zuluTime = 0;
+        this.zuluTime = 0; // 世界协调时（UTC）
         
-        // Derived values for ND display
-        this.x = 0; // NM from reference
-        this.y = 0; // NM from reference
+        // ND 显示用派生坐标值
+        this.x = 0; // 距参考点的 X 方向距离（海里）
+        this.y = 0; // 距参考点的 Y 方向距离（海里）
     }
     
     /**
-     * Convert lat/lon to NM coordinates relative to reference point
+     * 将经纬度转换为相对于参考点的海里坐标
      */
     calculateNMCoordinates(referenceLat, referenceLon) {
-        // Great circle distance calculation
+        // 大圆距离计算
         const lat1 = referenceLat * NAV.DEG_TO_RAD;
         const lon1 = referenceLon * NAV.DEG_TO_RAD;
         const lat2 = this.latitude * NAV.DEG_TO_RAD;
@@ -81,20 +81,20 @@ export class FlightData {
         const dLon = lon2 - lon1;
         const dLat = lat2 - lat1;
         
-        // Haversine formula
+        // 哈弗辛公式（Haversine）
         const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
                  Math.cos(lat1) * Math.cos(lat2) *
                  Math.sin(dLon/2) * Math.sin(dLon/2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         const distance = NAV.EARTH_RADIUS_NM * c;
         
-        // Bearing
+        // 方位角
         const y = Math.sin(dLon) * Math.cos(lat2);
         const x = Math.cos(lat1) * Math.sin(lat2) -
                  Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
         const bearing = Math.atan2(y, x) * NAV.RAD_TO_DEG;
         
-        // Convert to Cartesian coordinates (NM)
+        // 转换为笛卡尔坐标（海里）
         this.x = Math.sin(bearing * NAV.DEG_TO_RAD) * distance;
         this.y = Math.cos(bearing * NAV.DEG_TO_RAD) * distance;
         
@@ -102,7 +102,7 @@ export class FlightData {
     }
     
     /**
-     * Update from simulator data
+     * 从模拟器数据更新
      */
     updateFromSimulator(data) {
         Object.assign(this, data);
@@ -110,12 +110,12 @@ export class FlightData {
     }
     
     /**
-     * Generate mock data for testing
+     * 生成用于测试的模拟数据
      */
     generateMockData(referenceLat = 49.0097, referenceLon = 2.5479) {
         const time = Date.now() / 1000;
         
-        // Simulate flight from Paris CDG
+        // 模拟从巴黎戴高乐机场（CDG）起飞的飞行
         this.latitude = referenceLat + Math.sin(time * 0.01) * 0.5;
         this.longitude = referenceLon + Math.cos(time * 0.01) * 0.5;
         this.altitude = 35000 + Math.sin(time * 0.1) * 1000;
@@ -144,7 +144,7 @@ export class FlightData {
         this.simTime = time;
         this.zuluTime = Math.floor(time) % 86400;
         
-        // Calculate NM coordinates
+        // 计算海里坐标
         this.calculateNMCoordinates(referenceLat, referenceLon);
         
         return this;
@@ -152,7 +152,7 @@ export class FlightData {
 }
 
 /**
- * X-Plane DataRef Integration
+ * X-Plane DataRef 集成
  */
 class XPlaneIntegration {
     constructor() {
@@ -163,18 +163,18 @@ class XPlaneIntegration {
     }
     
     /**
-     * Connect to X-Plane via UDP
+     * 通过 UDP 连接 X-Plane
      */
     async connect(host = '127.0.0.1', port = 49000) {
         try {
-            // In a real implementation, this would use WebSockets or UDP
+            // 在实际实现中，这将使用 WebSocket 或 UDP
             console.log(`Connecting to X-Plane at ${host}:${port}`);
             
-            // Simulate connection
+            // 模拟连接
             await new Promise(resolve => setTimeout(resolve, 1000));
             this.connected = true;
             
-            // Subscribe to data refs
+            // 订阅数据引用
             this.subscribeToDataRefs();
             
             return true;
@@ -185,10 +185,10 @@ class XPlaneIntegration {
     }
     
     /**
-     * Subscribe to required data refs
+     * 订阅所需的数据引用
      */
     subscribeToDataRefs() {
-        // Essential X-Plane data refs for ND display
+        // ND 显示所需的 X-Plane 数据引用
         const essentialRefs = [
             'sim/flightmodel/position/latitude',
             'sim/flightmodel/position/longitude',
@@ -210,17 +210,17 @@ class XPlaneIntegration {
     }
     
     /**
-     * Get flight data from X-Plane
+     * 从 X-Plane 获取飞行数据
      */
     async getFlightData() {
         if (!this.connected) {
             throw new Error('Not connected to X-Plane');
         }
         
-        // In real implementation, this would read from socket
+        // 在实际实现中，这将从 socket 读取
         const flightData = new FlightData();
         
-        // Simulate data from X-Plane
+        // 模拟来自 X-Plane 的数据
         flightData.latitude = 49.0097 + (Math.random() - 0.5) * 0.01;
         flightData.longitude = 2.5479 + (Math.random() - 0.5) * 0.01;
         flightData.altitude = 35000 + (Math.random() - 0.5) * 100;
@@ -237,19 +237,19 @@ class XPlaneIntegration {
     }
     
     /**
-     * Disconnect from X-Plane
+     * 断开与 X-Plane 的连接
      */
     disconnect() {
         this.connected = false;
         if (this.socket) {
-            // Close socket in real implementation
+            // 在实际实现中关闭 socket
             this.socket = null;
         }
     }
 }
 
 /**
- * Microsoft Flight Simulator Integration
+ * Microsoft Flight Simulator 集成
  */
 class MSFSIntegration {
     constructor() {
@@ -259,14 +259,14 @@ class MSFSIntegration {
     }
     
     /**
-     * Connect to MSFS via SimConnect
+     * 通过 SimConnect 连接 MSFS
      */
     async connect() {
         try {
-            // In a real implementation, this would use SimConnect JS
+            // 在实际实现中，这将使用 SimConnect JS
             console.log('Connecting to MSFS via SimConnect');
             
-            // Simulate connection
+            // 模拟连接
             await new Promise(resolve => setTimeout(resolve, 1000));
             this.connected = true;
             
@@ -278,7 +278,7 @@ class MSFSIntegration {
     }
     
     /**
-     * Get flight data from MSFS
+     * 从 MSFS 获取飞行数据
      */
     async getFlightData() {
         if (!this.connected) {
@@ -287,7 +287,7 @@ class MSFSIntegration {
         
         const flightData = new FlightData();
         
-        // Simulate data from MSFS
+        // 模拟来自 MSFS 的数据
         const time = Date.now() / 1000;
         flightData.latitude = 49.0097 + Math.sin(time * 0.005) * 0.5;
         flightData.longitude = 2.5479 + Math.cos(time * 0.005) * 0.5;
@@ -310,7 +310,7 @@ class MSFSIntegration {
 }
 
 /**
- * External API Integration (for web-based simulators)
+ * 外部 API 集成（用于基于网页的模拟器）
  */
 class ExternalAPIIntegration {
     constructor(apiUrl) {
@@ -321,7 +321,7 @@ class ExternalAPIIntegration {
     
     async connect() {
         try {
-            // Test connection
+            // 测试连接
             const response = await fetch(`${this.apiUrl}/status`);
             if (response.ok) {
                 this.connected = true;
@@ -346,7 +346,7 @@ class ExternalAPIIntegration {
             const flightData = new FlightData();
             flightData.updateFromSimulator(data);
             
-            // Calculate NM coordinates if lat/lon provided
+            // 如果提供了经纬度，计算海里坐标
             if (data.latitude && data.longitude) {
                 flightData.calculateNMCoordinates(data.latitude, data.longitude);
             }
@@ -364,7 +364,7 @@ class ExternalAPIIntegration {
 }
 
 /**
- * Main Simulator Integration Service
+ * 主模拟器集成服务
  */
 class SimulatorIntegrationService {
     constructor() {
@@ -374,12 +374,12 @@ class SimulatorIntegrationService {
         this.updateInterval = null;
         this.updateRate = UPDATE_RATES.MEDIUM;
         this.listeners = new Set();
-        this.referenceLat = 49.0097; // Paris CDG
-        this.referenceLon = 2.5479;
+        this.referenceLat = 49.0097; // 巴黎戴高乐机场（CDG）纬度
+        this.referenceLon = 2.5479;  // 巴黎戴高乐机场（CDG）经度
     }
     
     /**
-     * Initialize simulator connection
+     * 初始化模拟器连接
      */
     async initialize(simulatorType = SIMULATOR_TYPES.MOCK, options = {}) {
         this.simulatorType = simulatorType;
@@ -410,19 +410,19 @@ class SimulatorIntegrationService {
         if (this.integration) {
             const connected = await this.integration.connect();
             if (!connected) {
-                console.warn('Failed to connect to simulator, falling back to mock data');
+                console.warn('连接模拟器失败，回退到模拟数据模式');
                 this.simulatorType = SIMULATOR_TYPES.MOCK;
             }
         }
         
-        // Start data updates
+        // 开始数据更新
         this.startUpdates();
         
         return this.simulatorType;
     }
     
     /**
-     * Start periodic data updates
+     * 启动周期性数据更新
      */
     startUpdates() {
         if (this.updateInterval) {
@@ -436,93 +436,93 @@ class SimulatorIntegrationService {
     }
     
     /**
-     * Update flight data from simulator
+     * 从模拟器更新飞行数据
      */
     async updateFlightData() {
         try {
             let newData;
             
             if (this.simulatorType === SIMULATOR_TYPES.MOCK || !this.integration) {
-                // Generate mock data
+                // 生成模拟数据
                 newData = this.flightData.generateMockData(this.referenceLat, this.referenceLon);
             } else {
-                // Get data from simulator
+                // 从模拟器获取数据
                 newData = await this.integration.getFlightData();
             }
             
-            // Update flight data
+            // 更新飞行数据
             this.flightData = newData;
             
-            // Notify listeners
+            // 通知监听器
             this.notifyListeners(newData);
             
         } catch (error) {
             console.error('Failed to update flight data:', error);
             
-            // Fall back to mock data
+            // 回退到模拟数据
             this.flightData.generateMockData(this.referenceLat, this.referenceLon);
             this.notifyListeners(this.flightData);
         }
     }
     
     /**
-     * Get current flight data
+     * 获取当前飞行数据
      */
     getFlightData() {
         return this.flightData;
     }
     
     /**
-     * Get data formatted for ND display
+     * 获取格式化后的 ND 显示数据
      */
     getNDDisplayData() {
         const data = this.flightData;
         
         return {
-            // Position
+            // 位置
             x: data.x,
             y: data.y,
             
-            // Attitude
+            // 姿态
             heading: data.heading,
             pitch: data.pitch,
             bank: data.bank,
             
-            // Speed and altitude
+            // 速度和高度
             altitude: data.altitude,
             speed: data.groundSpeed,
             verticalSpeed: data.verticalSpeed,
             
-            // Navigation
+            // 导航
             track: data.track,
             windDirection: data.windDirection,
             windSpeed: data.windSpeed,
             
-            // Systems
+            // 系统
             autopilotEngaged: data.autopilotEngaged,
             flightPhase: data.flightPhase,
             
-            // Timestamp
+            // 时间戳
             timestamp: data.timestamp
         };
     }
     
     /**
-     * Add data update listener
+     * 添加数据更新监听器
      */
     addListener(listener) {
         this.listeners.add(listener);
     }
     
     /**
-     * Remove data update listener
+     * 移除数据更新监听器
      */
     removeListener(listener) {
         this.listeners.delete(listener);
     }
     
     /**
-     * Notify all listeners of data update
+     * 通知所有监听器数据已更新
      */
     notifyListeners(data) {
         this.listeners.forEach(listener => {
@@ -535,7 +535,7 @@ class SimulatorIntegrationService {
     }
     
     /**
-     * Set reference point for NM coordinates
+     * 设置海里坐标的参考点
      */
     setReferencePoint(lat, lon) {
         this.referenceLat = lat;
@@ -543,7 +543,7 @@ class SimulatorIntegrationService {
     }
     
     /**
-     * Get service status
+     * 获取服务状态
      */
     getStatus() {
         return {
@@ -557,7 +557,7 @@ class SimulatorIntegrationService {
     }
     
     /**
-     * Stop updates and clean up
+     * 停止更新并清理资源
      */
     stop() {
         if (this.updateInterval) {
@@ -574,10 +574,10 @@ class SimulatorIntegrationService {
     }
 }
 
-// Export singleton instance
+// 导出单例实例
 export const simulatorService = new SimulatorIntegrationService();
 
-// Export classes and constants for testing
+// 导出类和常量（用于测试）
 export {
     SimulatorIntegrationService,
     XPlaneIntegration,
@@ -589,7 +589,7 @@ export {
     // UPDATE_RATES is already exported at line 21-25
 };
 
-// Default export for convenience
+// 默认导出（方便使用）
 export default {
     SimulatorIntegrationService
     // simulatorService is already exported as named export above

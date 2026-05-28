@@ -9,9 +9,9 @@ const EFISPanel = ({
   course, onCourseChange
 }) => {
 
-  // --- Components for Visual Elements ---
+  // --- 视觉元素组件 ---
 
-  // The Airbus Rectangular Button with "Three Lines" graphic
+  // 空客风格矩形按钮（带"三线"图形）
   const AirButton = ({ label, active, onClick, bottomLabel }) => React.createElement('div', {
     className: 'flex flex-col items-center'
   }, [
@@ -60,6 +60,7 @@ const EFISPanel = ({
     }, 'OFF')
   ]);
 
+  // 螺丝头装饰元素
   const ScrewHead = () => React.createElement('div', {
     className: 'w-3 h-3 rounded-full bg-[#888] border border-[#555] flex items-center justify-center shadow-inner'
   }, [
@@ -73,6 +74,7 @@ const EFISPanel = ({
     })
   ]);
 
+  // 拨动开关组件
   const ToggleSwitch = ({ labelLeft, labelRight }) => React.createElement('div', {
     className: 'flex flex-col items-center'
   }, [
@@ -106,6 +108,7 @@ const EFISPanel = ({
 
   // --- Configuration for Knobs ---
 
+  // 模式选择选项
   const modeOptions = [
       { label: 'ILS', value: 'LS', angle: -70 },
       { label: 'VOR', value: 'VOR', angle: -35 },
@@ -114,6 +117,7 @@ const EFISPanel = ({
       { label: 'PLAN', value: 'PLAN', angle: 70 },
   ];
 
+  // 量程选择选项
   const rangeOptions = [
       { label: '10', value: 10, angle: -75 },
       { label: '20', value: 20, angle: -45 },

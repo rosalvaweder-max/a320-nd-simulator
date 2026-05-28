@@ -1,32 +1,32 @@
 /**
- * Canvas Rendering Optimizer for A320 ND Display
- * Advanced performance optimization techniques for professional-grade simulation
+ * Canvas 渲染优化器 - A320 ND 显示器
+ * 专业级模拟的高级性能优化技术
  */
 
 /**
- * Rendering Quality Levels
+ * 渲染质量级别
  */
 export const RENDERING_QUALITY = {
-    HIGH: 'HIGH',     // Full detail, 60 FPS target
-    MEDIUM: 'MEDIUM', // Reduced detail, 30 FPS target  
-    LOW: 'LOW',       // Minimal detail, 15 FPS target
-    ADAPTIVE: 'ADAPTIVE' // Automatically adjusts based on performance
+    HIGH: 'HIGH',         // 全细节，目标 60 FPS
+    MEDIUM: 'MEDIUM',     // 减少细节，目标 30 FPS
+    LOW: 'LOW',           // 最小细节，目标 15 FPS
+    ADAPTIVE: 'ADAPTIVE'  // 根据性能自动调整
 };
 
 /**
- * Display List for efficient redraw
+ * 显示列表 - 用于高效重绘
  */
 class DisplayList {
     constructor() {
-        this.items = [];
-        this.dirty = true;
-        this.cacheCanvas = null;
-        this.cacheContext = null;
-        this.cacheValid = false;
+        this.items = [];          // 绘制操作列表
+        this.dirty = true;        // 是否需要重新渲染
+        this.cacheCanvas = null;  // 缓存 Canvas
+        this.cacheContext = null; // 缓存上下文
+        this.cacheValid = false;  // 缓存是否有效
     }
     
     /**
-     * Add draw operation to display list
+     * 添加绘制操作到显示列表
      */
     add(item) {
         this.items.push(item);
@@ -34,7 +34,7 @@ class DisplayList {
     }
     
     /**
-     * Clear display list
+     * 清空显示列表
      */
     clear() {
         this.items = [];
@@ -43,7 +43,7 @@ class DisplayList {
     }
     
     /**
-     * Mark display list as dirty
+     * 标记显示列表为脏（需要重新渲染）
      */
     markDirty() {
         this.dirty = true;
@@ -51,7 +51,7 @@ class DisplayList {
     }
     
     /**
-     * Initialize cache canvas
+     * 初始化缓存 Canvas
      */
     initCache(width, height) {
         if (!this.cacheCanvas) {
@@ -66,7 +66,7 @@ class DisplayList {
     }
     
     /**
-     * Render to cache if dirty
+     * 如果脏则渲染到缓存
      */
     renderToCache(width, height) {
         if (!this.dirty && this.cacheValid) {
@@ -75,10 +75,10 @@ class DisplayList {
         
         this.initCache(width, height);
         
-        // Clear cache
+        // 清空缓存
         this.cacheContext.clearRect(0, 0, width, height);
         
-        // Render all items
+        // 渲染所有项目
         this.items.forEach(item => {
             if (item.render) {
                 item.render(this.cacheContext);
@@ -92,13 +92,13 @@ class DisplayList {
     }
     
     /**
-     * Draw cached content to target context
+     * 将缓存内容绘制到目标上下文
      */
     drawToContext(targetContext, x = 0, y = 0) {
         if (this.cacheValid && this.cacheCanvas) {
             targetContext.drawImage(this.cacheCanvas, x, y);
         } else {
-            // Fallback: render directly
+            // 回退：直接渲染
             this.items.forEach(item => {
                 if (item.render) {
                     item.render(targetContext);
@@ -109,22 +109,22 @@ class DisplayList {
 }
 
 /**
- * Dirty Rectangle Manager for partial redraws
+ * 脏矩形管理器 - 用于局部重绘
  */
 class DirtyRectangleManager {
     constructor() {
-        this.dirtyRects = [];
-        this.fullRedraw = false;
-        this.mergeThreshold = 5; // Merge rects closer than this
+        this.dirtyRects = [];       // 脏矩形列表
+        this.fullRedraw = false;    // 是否需要全量重绘
+        this.mergeThreshold = 5;    // 合并距离小于此值的矩形
     }
     
     /**
-     * Add dirty rectangle
+     * 添加脏矩形
      */
     addDirtyRect(x, y, width, height) {
         this.dirtyRects.push({ x, y, width, height });
         
-        // If too many dirty rects, just do full redraw
+        // 如果脏矩形过多，直接全量重绘
         if (this.dirtyRects.length > 20) {
             this.fullRedraw = true;
             this.dirtyRects = [];
@@ -132,7 +132,7 @@ class DirtyRectangleManager {
     }
     
     /**
-     * Mark entire canvas as dirty
+     * 标记整个 Canvas 为脏
      */
     markAllDirty() {
         this.fullRedraw = true;
@@ -140,7 +140,7 @@ class DirtyRectangleManager {
     }
     
     /**
-     * Merge overlapping or nearby rectangles
+     * 合并重叠或相邻的矩形
      */
     mergeRects() {
         if (this.dirtyRects.length <= 1) return;
@@ -159,12 +159,12 @@ class DirtyRectangleManager {
                 
                 const other = this.dirtyRects[j];
                 
-                // Check if rectangles overlap or are close
+                // 检查矩形是否重叠或接近
                 const overlap = this.rectsOverlap(rect, other);
                 const nearby = this.rectsNearby(rect, other, this.mergeThreshold);
                 
                 if (overlap || nearby) {
-                    // Merge rectangles
+                    // 合并矩形
                     const minX = Math.min(rect.x, other.x);
                     const minY = Math.min(rect.y, other.y);
                     const maxX = Math.max(rect.x + rect.width, other.x + other.width);
@@ -188,7 +188,7 @@ class DirtyRectangleManager {
     }
     
     /**
-     * Check if two rectangles overlap
+     * 检查两个矩形是否重叠
      */
     rectsOverlap(rect1, rect2) {
         return !(rect1.x + rect1.width < rect2.x ||
@@ -198,7 +198,7 @@ class DirtyRectangleManager {
     }
     
     /**
-     * Check if two rectangles are nearby
+     * 检查两个矩形是否相邻
      */
     rectsNearby(rect1, rect2, threshold) {
         const center1 = {
@@ -220,11 +220,11 @@ class DirtyRectangleManager {
     }
     
     /**
-     * Get dirty rectangles for redraw
+     * 获取需要重绘的脏矩形
      */
     getDirtyRects() {
         if (this.fullRedraw) {
-            return null; // null means full redraw
+            return null; // null 表示全量重绘
         }
         
         this.mergeRects();
@@ -232,7 +232,7 @@ class DirtyRectangleManager {
     }
     
     /**
-     * Clear dirty rectangles after redraw
+     * 重绘后清空脏矩形
      */
     clear() {
         this.dirtyRects = [];
@@ -241,17 +241,17 @@ class DirtyRectangleManager {
 }
 
 /**
- * Spatial Index for efficient object querying
+ * 空间索引 - 用于高效对象查询
  */
 class SpatialIndex {
     constructor(cellSize = 50) {
-        this.cellSize = cellSize;
-        this.grid = new Map();
-        this.objects = new Map();
+        this.cellSize = cellSize;  // 网格单元大小
+        this.grid = new Map();     // 网格 → 对象ID集合
+        this.objects = new Map();  // 对象ID → 对象数据
     }
     
     /**
-     * Add object to spatial index
+     * 添加对象到空间索引
      */
     add(id, x, y, width, height) {
         const gridKeys = this.getGridKeys(x, y, width, height);
@@ -270,7 +270,7 @@ class SpatialIndex {
     }
     
     /**
-     * Update object position
+     * 更新对象位置
      */
     update(id, x, y, width, height) {
         this.remove(id);
@@ -278,7 +278,7 @@ class SpatialIndex {
     }
     
     /**
-     * Remove object from spatial index
+     * 从空间索引中移除对象
      */
     remove(id) {
         const obj = this.objects.get(id);
@@ -300,7 +300,7 @@ class SpatialIndex {
     }
     
     /**
-     * Get grid cell keys for a rectangle
+     * 获取矩形覆盖的网格单元键
      */
     getGridKeys(x, y, width, height) {
         const minX = Math.floor(x / this.cellSize);
@@ -319,7 +319,7 @@ class SpatialIndex {
     }
     
     /**
-     * Query objects in viewport
+     * 查询视口中的对象
      */
     query(x, y, width, height) {
         const gridKeys = this.getGridKeys(x, y, width, height);
@@ -332,7 +332,7 @@ class SpatialIndex {
             }
         });
         
-        // Filter objects that are actually in the viewport
+        // 过滤出实际在视口中的对象
         const filtered = [];
         result.forEach(id => {
             const obj = this.objects.get(id);
@@ -345,7 +345,7 @@ class SpatialIndex {
     }
     
     /**
-     * Check if two rectangles overlap
+     * 检查两个矩形是否重叠
      */
     rectsOverlap(rect1, rect2) {
         return !(rect1.x + rect1.width < rect2.x ||
@@ -355,7 +355,7 @@ class SpatialIndex {
     }
     
     /**
-     * Clear spatial index
+     * 清空空间索引
      */
     clear() {
         this.grid.clear();
@@ -364,23 +364,23 @@ class SpatialIndex {
 }
 
 /**
- * Object Pool for reducing garbage collection
+ * 对象池 - 用于减少垃圾回收
  */
 class ObjectPool {
     constructor(createFn, resetFn, initialSize = 100) {
-        this.createFn = createFn;
-        this.resetFn = resetFn;
-        this.pool = [];
-        this.activeCount = 0;
+        this.createFn = createFn;     // 创建对象函数
+        this.resetFn = resetFn;       // 重置对象函数
+        this.pool = [];               // 对象池
+        this.activeCount = 0;         // 活跃对象数
         
-        // Pre-allocate objects
+        // 预分配对象
         for (let i = 0; i < initialSize; i++) {
             this.pool.push(createFn());
         }
     }
     
     /**
-     * Get object from pool
+     * 从池中获取对象
      */
     acquire() {
         if (this.pool.length > 0) {
@@ -393,7 +393,7 @@ class ObjectPool {
     }
     
     /**
-     * Return object to pool
+     * 将对象归还到池中
      */
     release(obj) {
         if (this.resetFn) {
@@ -404,7 +404,7 @@ class ObjectPool {
     }
     
     /**
-     * Get pool statistics
+     * 获取池统计信息
      */
     getStats() {
         return {
@@ -417,21 +417,21 @@ class ObjectPool {
 }
 
 /**
- * Frame Rate Controller
+ * 帧率控制器
  */
 class FrameRateController {
     constructor(targetFPS = 60) {
-        this.targetFPS = targetFPS;
-        this.targetFrameTime = 1000 / targetFPS;
-        this.lastFrameTime = 0;
-        this.frameTimes = [];
-        this.averageFPS = targetFPS;
-        this.frameCount = 0;
-        this.lastFPSUpdate = 0;
+        this.targetFPS = targetFPS;           // 目标帧率
+        this.targetFrameTime = 1000 / targetFPS; // 目标帧时间（毫秒）
+        this.lastFrameTime = 0;               // 上一帧时间
+        this.frameTimes = [];                 // 帧时间记录
+        this.averageFPS = targetFPS;          // 平均帧率
+        this.frameCount = 0;                  // 帧计数
+        this.lastFPSUpdate = 0;               // 上次更新 FPS 的时间
     }
     
     /**
-     * Wait if necessary to maintain target FPS
+     * 必要时等待以维持目标帧率
      */
     async throttle() {
         const now = performance.now();
@@ -445,7 +445,7 @@ class FrameRateController {
         this.lastFrameTime = performance.now();
         this.frameCount++;
         
-        // Update FPS every second
+        // 每秒更新一次 FPS
         if (now - this.lastFPSUpdate >= 1000) {
             this.averageFPS = this.frameCount;
             this.frameCount = 0;
@@ -456,14 +456,14 @@ class FrameRateController {
     }
     
     /**
-     * Adjust target FPS based on performance
+     * 根据性能调整目标帧率
      */
     adjustForPerformance(currentFPS, minFPS = 15, maxFPS = 60) {
         if (currentFPS < minFPS) {
-            // Lower target to reduce load
+            // 降低目标以减少负载
             this.targetFPS = Math.max(minFPS, this.targetFPS - 5);
         } else if (currentFPS > this.targetFPS + 5) {
-            // Increase target if we have headroom
+            // 有余量时提高目标
             this.targetFPS = Math.min(maxFPS, this.targetFPS + 5);
         }
         
@@ -472,7 +472,7 @@ class FrameRateController {
     }
     
     /**
-     * Get performance statistics
+     * 获取性能统计信息
      */
     getStats() {
         return {
@@ -484,17 +484,17 @@ class FrameRateController {
 }
 
 /**
- * Main Rendering Optimizer
+ * 主渲染优化器
  */
 class RenderingOptimizer {
     constructor() {
-        this.quality = RENDERING_QUALITY.ADAPTIVE;
+        this.quality = RENDERING_QUALITY.ADAPTIVE;  // 渲染质量
         this.displayList = new DisplayList();
         this.dirtyRectManager = new DirtyRectangleManager();
         this.spatialIndex = new SpatialIndex();
         this.frameController = new FrameRateController(60);
         
-        // Object pools for common objects
+        // 常用对象的对象池
         this.waypointPool = new ObjectPool(
             () => ({ x: 0, y: 0, name: '', type: '' }),
             obj => { obj.x = 0; obj.y = 0; obj.name = ''; obj.type = ''; }
@@ -505,21 +505,21 @@ class RenderingOptimizer {
             obj => { obj.x = 0; obj.y = 0; obj.bearing = 0; obj.distance = 0; obj.threatLevel = ''; }
         );
         
-        // Performance monitoring
+        // 性能监控
         this.renderTimes = [];
         this.lastRenderTime = 0;
         this.performanceStats = {
-            totalFrames: 0,
-            averageRenderTime: 0,
-            minRenderTime: Infinity,
-            maxRenderTime: 0,
-            dirtyRectRedraws: 0,
-            fullRedraws: 0
+            totalFrames: 0,            // 总帧数
+            averageRenderTime: 0,      // 平均渲染时间
+            minRenderTime: Infinity,   // 最小渲染时间
+            maxRenderTime: 0,          // 最大渲染时间
+            dirtyRectRedraws: 0,       // 脏矩形重绘次数
+            fullRedraws: 0             // 全量重绘次数
         };
     }
     
     /**
-     * Set rendering quality level
+     * 设置渲染质量级别
      */
     setQuality(quality) {
         this.quality = quality;
@@ -535,7 +535,7 @@ class RenderingOptimizer {
                 this.frameController.targetFPS = 15;
                 break;
             case RENDERING_QUALITY.ADAPTIVE:
-                // Will adjust automatically
+                // 将自动调整
                 break;
         }
         
@@ -543,19 +543,19 @@ class RenderingOptimizer {
     }
     
     /**
-     * Begin rendering frame
+     * 开始渲染帧
      */
     beginFrame() {
         this.lastRenderTime = performance.now();
     }
     
     /**
-     * End rendering frame and update statistics
+     * 结束渲染帧并更新统计信息
      */
     endFrame() {
         const renderTime = performance.now() - this.lastRenderTime;
         
-        // Update performance statistics
+        // 更新性能统计信息
         this.renderTimes.push(renderTime);
         if (this.renderTimes.length > 60) {
             this.renderTimes.shift();
@@ -567,12 +567,12 @@ class RenderingOptimizer {
         this.performanceStats.minRenderTime = Math.min(this.performanceStats.minRenderTime, renderTime);
         this.performanceStats.maxRenderTime = Math.max(this.performanceStats.maxRenderTime, renderTime);
         
-        // Adaptive quality adjustment
+        // 自适应质量调整
         if (this.quality === RENDERING_QUALITY.ADAPTIVE) {
             const currentFPS = 1000 / (renderTime || 1);
             this.frameController.adjustForPerformance(currentFPS);
             
-            // Adjust detail level based on performance
+            // 根据性能调整细节级别
             if (currentFPS < 20) {
                 this.setQuality(RENDERING_QUALITY.LOW);
             } else if (currentFPS < 40) {
@@ -586,7 +586,7 @@ class RenderingOptimizer {
     }
     
     /**
-     * Optimize rendering based on viewport and quality
+     * 根据视口和质量优化渲染
      */
     getRenderOptions(viewport) {
         const options = {
@@ -615,47 +615,47 @@ class RenderingOptimizer {
                 options.lod = true;
                 break;
         }
-        // Level of Detail: reduce detail for distant objects
+        // 细节级别：减少远处对象的细节
         if (options.lod && viewport) {
             const viewportSize = Math.max(viewport.width, viewport.height);
-            options.lodThreshold = viewportSize * 0.3; // Objects beyond 30% of viewport get reduced detail
+            options.lodThreshold = viewportSize * 0.3; // 超过视口 30% 的对象减少细节
         }
         
         return options;
     }
     
     /**
-     * Render with optimization
+     * 使用优化进行渲染
      */
     render(context, width, height, renderCallback) {
         this.beginFrame();
         
-        // Get dirty rectangles
+        // 获取脏矩形
         const dirtyRects = this.dirtyRectManager.getDirtyRects();
         
         if (dirtyRects === null) {
-            // Full redraw
+            // 全量重绘
             this.performanceStats.fullRedraws++;
             context.clearRect(0, 0, width, height);
             renderCallback(context, 0, 0, width, height);
         } else if (dirtyRects.length > 0) {
-            // Partial redraw
+            // 局部重绘
             this.performanceStats.dirtyRectRedraws++;
             
-            // Save context state
+            // 保存上下文状态
             context.save();
             
-            // Set clipping region for each dirty rectangle
+            // 为每个脏矩形设置裁剪区域
             dirtyRects.forEach(rect => {
                 context.save();
                 context.beginPath();
                 context.rect(rect.x, rect.y, rect.width, rect.height);
                 context.clip();
                 
-                // Clear only the dirty area
+                // 仅清除脏区域
                 context.clearRect(rect.x, rect.y, rect.width, rect.height);
                 
-                // Render
+                // 渲染
                 renderCallback(context, rect.x, rect.y, rect.width, rect.height);
                 
                 context.restore();
@@ -664,7 +664,7 @@ class RenderingOptimizer {
             context.restore();
         }
         
-        // Clear dirty rectangles after rendering
+        // 渲染后清空脏矩形
         this.dirtyRectManager.clear();
         
         const renderTime = this.endFrame();
@@ -672,7 +672,7 @@ class RenderingOptimizer {
     }
     
     /**
-     * Add object to spatial index and mark area as dirty
+     * 添加对象到空间索引并标记区域为脏
      */
     addObject(id, x, y, width, height) {
         const obj = this.spatialIndex.add(id, x, y, width, height);
@@ -681,12 +681,12 @@ class RenderingOptimizer {
     }
     
     /**
-     * Update object in spatial index
+     * 更新空间索引中的对象
      */
     updateObject(id, x, y, width, height) {
         const oldObj = this.spatialIndex.objects.get(id);
         if (oldObj) {
-            // Mark old position as dirty
+            // 标记旧位置为脏
             this.dirtyRectManager.addDirtyRect(oldObj.x, oldObj.y, oldObj.width, oldObj.height);
         }
         
@@ -696,7 +696,7 @@ class RenderingOptimizer {
     }
     
     /**
-     * Remove object and mark area as dirty
+     * 移除对象并标记区域为脏
      */
     removeObject(id) {
         const obj = this.spatialIndex.objects.get(id);
@@ -707,14 +707,14 @@ class RenderingOptimizer {
     }
     
     /**
-     * Query objects in viewport for culling
+     * 查询视口中的对象（用于裁剪）
      */
     queryViewport(x, y, width, height) {
         return this.spatialIndex.query(x, y, width, height);
     }
     
     /**
-     * Get performance statistics
+     * 获取性能统计信息
      */
     getPerformanceStats() {
         const frameStats = this.frameController.getStats();
@@ -734,7 +734,7 @@ class RenderingOptimizer {
     }
     
     /**
-     * Reset optimizer state
+     * 重置优化器状态
      */
     reset() {
         this.displayList.clear();
@@ -753,10 +753,10 @@ class RenderingOptimizer {
     }
 }
 
-// Export singleton instance
+// 导出单例实例
 export const renderingOptimizer = new RenderingOptimizer();
 
-// Export classes and constants for testing
+// 导出类和常量（用于测试）
 export {
     RenderingOptimizer,
     DisplayList,
@@ -766,7 +766,7 @@ export {
     FrameRateController
     // renderingOptimizer is already exported above as named export
 };
-// Default export for convenience
+// 默认导出（方便使用）
 export default {
     RenderingOptimizer
     // renderingOptimizer and RENDERING_QUALITY are already exported as named exports

@@ -1,22 +1,22 @@
 /**
- * Terrain and Weather Radar Simulation Service
- * Professional-grade terrain display and weather radar simulation for A320 ND
+ * 地形与气象雷达仿真服务
+ * 面向 A320 ND 的专业级地形显示和气象雷达仿真
  */
 
 import { COLORS, NAV } from '../constants.js';
 
 /**
- * Terrain Service for elevation data processing and display
+ * 地形服务 - 用于高程数据处理和显示
  */
 class TerrainService {
     constructor() {
         this.terrainData = null;
         this.elevationCache = new Map();
-        this.gridResolution = 10; // NM grid resolution
+        this.gridResolution = 10; // 网格分辨率（海里）
     }
     
     /**
-     * Load terrain data from external source
+     * 从外部源加载地形数据
      */
     async loadTerrainData(url) {
         try {
@@ -31,18 +31,18 @@ class TerrainService {
     }
     
     /**
-     * Preprocess terrain data for faster rendering
+     * 预处理地形数据以加快渲染速度
      */
     preprocessTerrainData() {
         if (!this.terrainData || !this.terrainData.elevations) return;
         
-        // Create elevation grid for quick lookup
+        // 创建高程网格以便快速查询
         const { elevations, bounds, resolution } = this.terrainData;
         
         this.gridResolution = resolution || 10;
         this.terrainBounds = bounds;
         
-        // Convert to grid for faster interpolation
+        // 转换为网格以便快速插值
         const gridWidth = Math.ceil((bounds.maxX - bounds.minX) / this.gridResolution);
         const gridHeight = Math.ceil((bounds.maxY - bounds.minY) / this.gridResolution);
         
@@ -51,7 +51,7 @@ class TerrainService {
             this.elevationGrid[i] = new Array(gridHeight).fill(0);
         }
         
-        // Populate grid
+        // 填充网格数据
         elevations.forEach(elevation => {
             const gridX = Math.floor((elevation.x - bounds.minX) / this.gridResolution);
             const gridY = Math.floor((elevation.y - bounds.minY) / this.gridResolution);
@@ -63,7 +63,7 @@ class TerrainService {
     }
     
     /**
-     * Get elevation at specific coordinates (bilinear interpolation)
+     * 获取指定坐标处的高程（双线性插值）
      */
     getElevationAt(x, y) {
         if (!this.terrainData || !this.elevationGrid) return 0;
@@ -77,7 +77,7 @@ class TerrainService {
         const x2 = Math.min(x1 + 1, this.elevationGrid.length - 1);
         const y2 = Math.min(y1 + 1, this.elevationGrid[0].length - 1);
         
-        // Bilinear interpolation
+        // 双线性插值
         const q11 = this.elevationGrid[x1]?.[y1] || 0;
         const q12 = this.elevationGrid[x1]?.[y2] || 0;
         const q21 = this.elevationGrid[x2]?.[y1] || 0;
@@ -96,7 +96,7 @@ class TerrainService {
     }
     
     /**
-     * Get terrain color based on elevation
+     * 根据高程获取地形颜色
      */
     getTerrainColor(elevation) {
         if (elevation >= 10000) return COLORS.TERRAIN_EXTREME;
@@ -107,7 +107,7 @@ class TerrainService {
     }
     
     /**
-     * Generate terrain contours for display
+     * 生成用于显示的地形等高线
      */
     generateTerrainContours(centerX, centerY, range, resolution = 20) {
         if (!this.terrainData) return [];
@@ -134,18 +134,18 @@ class TerrainService {
     }
     
     /**
-     * Calculate terrain clearance and warnings
+     * 计算地形净空和告警
      */
     calculateTerrainClearance(aircraftX, aircraftY, aircraftAltitude, lookaheadDistance = 20) {
         if (!this.terrainData) return { clearance: Infinity, warning: 'NONE' };
         
-        // Check terrain along flight path
+        // 检查飞行路径上的地形
         let maxElevation = 0;
         const steps = 10;
         
         for (let i = 0; i <= steps; i++) {
             const distance = (i / steps) * lookaheadDistance;
-            // Simplified: check straight ahead (should use actual flight path)
+            // 简化版：检查正前方（应使用实际飞行路径）
             const checkX = aircraftX;
             const checkY = aircraftY + distance;
             
@@ -155,7 +155,7 @@ class TerrainService {
         
         const clearance = aircraftAltitude - maxElevation;
         
-        // Determine warning level
+        // 确定告警等级
         let warning = 'NONE';
         if (clearance < 500) warning = 'PULL UP';
         else if (clearance < 1000) warning = 'TERRAIN';
@@ -166,19 +166,19 @@ class TerrainService {
 }
 
 /**
- * Weather Radar Service for precipitation and turbulence simulation
+ * 气象雷达服务 - 用于降水和湍流仿真
  */
 class WeatherRadarService {
     constructor() {
         this.weatherCells = [];
         this.turbulenceAreas = [];
-        this.radarRange = 80; // NM
-        this.radarTilt = 0; // degrees
+        this.radarRange = 80; // 雷达探测范围（海里）
+        this.radarTilt = 0; // 雷达倾斜角（度）
         this.lastUpdate = Date.now();
     }
     
     /**
-     * Generate realistic weather patterns
+     * 生成逼真的天气模式
      */
     generateWeatherPattern(centerX, centerY, intensity = 'MODERATE') {
         const patterns = {
@@ -196,7 +196,7 @@ class WeatherRadarService {
     }
     
     /**
-     * Generate isolated weather cells
+     * 生成孤立的天气单元
      */
     generateIsolatedCells(centerX, centerY) {
         const cells = [];
@@ -224,7 +224,7 @@ class WeatherRadarService {
     }
     
     /**
-     * Generate scattered weather cells
+     * 生成分散的天气单元
      */
     generateScatteredCells(centerX, centerY) {
         const cells = [];
@@ -252,13 +252,13 @@ class WeatherRadarService {
     }
     
     /**
-     * Generate broken cloud layer
+     * 生成碎云层
      */
     generateBrokenLayer(centerX, centerY) {
         const cells = [];
         const layerRadius = 40;
         
-        // Create larger connected areas
+        // 创建较大的连接区域
         for (let i = 0; i < 4; i++) {
             const offsetX = (Math.random() - 0.5) * 30;
             const offsetY = (Math.random() - 0.5) * 30;
@@ -280,7 +280,7 @@ class WeatherRadarService {
     }
     
     /**
-     * Generate overcast layer
+     * 生成阴天覆盖层
      */
     generateOvercastLayer(centerX, centerY) {
         return [{
@@ -295,7 +295,7 @@ class WeatherRadarService {
     }
     
     /**
-     * Generate turbulence areas associated with weather
+     * 生成与天气相关的湍流区域
      */
     generateTurbulenceAreas() {
         this.turbulenceAreas = this.weatherCells
@@ -309,7 +309,7 @@ class WeatherRadarService {
     }
     
     /**
-     * Random weather intensity
+     * 随机天气强度
      */
     randomIntensity() {
         const rand = Math.random();
@@ -320,7 +320,7 @@ class WeatherRadarService {
     }
     
     /**
-     * Random turbulence intensity
+     * 随机湍流强度
      */
     randomTurbulenceIntensity() {
         const rand = Math.random();
@@ -330,7 +330,7 @@ class WeatherRadarService {
     }
     
     /**
-     * Get weather color based on intensity
+     * 根据强度获取天气颜色
      */
     getWeatherColor(intensity) {
         switch (intensity) {
@@ -343,7 +343,7 @@ class WeatherRadarService {
     }
     
     /**
-     * Get turbulence color based on intensity
+     * 根据强度获取湍流颜色
      */
     getTurbulenceColor(intensity) {
         switch (intensity) {
@@ -355,7 +355,7 @@ class WeatherRadarService {
     }
     
     /**
-     * Simulate radar beam propagation and returns
+     * 模拟雷达波束传播和回波
      */
     simulateRadarReturns(aircraftX, aircraftY, aircraftAltitude, radarTilt = 0) {
         const returns = [];
@@ -363,20 +363,20 @@ class WeatherRadarService {
         const timeFactor = (now - this.lastUpdate) / 1000;
         
         this.weatherCells.forEach(cell => {
-            // Calculate distance to cell
+            // 计算到天气单元的距离
             const dx = cell.x - aircraftX;
             const dy = cell.y - aircraftY;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
-            // Check if within radar range
+            // 检查是否在雷达探测范围内
             if (distance > this.radarRange) return;
             
-            // Calculate beam elevation at cell distance
+            // 计算波束在天气单元距离处的高度
             const beamElevation = this.calculateBeamElevation(distance, radarTilt, aircraftAltitude);
             
-            // Check if beam intersects weather cell
+            // 检查波束是否与天气单元相交
             if (beamElevation >= cell.base && beamElevation <= cell.top) {
-                // Calculate return intensity (attenuated by distance)
+                // 计算回波强度（随距离衰减）
                 const attenuation = Math.max(0.1, 1 - (distance / this.radarRange));
                 const returnIntensity = this.calculateReturnIntensity(cell.intensity, attenuation);
                 
@@ -389,7 +389,7 @@ class WeatherRadarService {
             }
         });
         
-        // Add turbulence returns
+        // 添加湍流回波
         this.turbulenceAreas.forEach(area => {
             const dx = area.x - aircraftX;
             const dy = area.y - aircraftY;
@@ -405,30 +405,30 @@ class WeatherRadarService {
             }
         });
         
-        // Animate weather movement
+        // 动画化天气运动
         this.animateWeather(timeFactor);
         
         return returns;
     }
     
     /**
-     * Calculate radar beam elevation at given distance
+     * 计算给定距离处的雷达波束高度
      */
     calculateBeamElevation(distance, tilt, aircraftAltitude) {
-        // Simplified beam geometry
+        // 简化波束几何计算
         const beamSlope = Math.tan(tilt * NAV.DEG_TO_RAD);
-        return aircraftAltitude + beamSlope * distance * 6076.12; // Convert NM to feet
+        return aircraftAltitude + beamSlope * distance * 6076.12; // 将海里转换为英尺
     }
     
     /**
-     * Calculate radar return intensity
+     * 计算雷达回波强度
      */
     calculateReturnIntensity(baseIntensity, attenuation) {
-        // Apply distance attenuation and random variation
+        // 应用距离衰减和随机变化
         const variation = 0.8 + Math.random() * 0.4;
         const rawIntensity = this.intensityToValue(baseIntensity) * attenuation * variation;
         
-        // Convert back to intensity category
+        // 转换回强度类别
         if (rawIntensity > 0.7) return 'EXTREME';
         if (rawIntensity > 0.5) return 'HEAVY';
         if (rawIntensity > 0.3) return 'MODERATE';
@@ -436,7 +436,7 @@ class WeatherRadarService {
     }
     
     /**
-     * Convert intensity string to numeric value
+     * 将强度字符串转换为数值
      */
     intensityToValue(intensity) {
         switch (intensity) {
@@ -449,12 +449,12 @@ class WeatherRadarService {
     }
     
     /**
-     * Animate weather movement and evolution
+     * 动画化天气运动和演变
      */
     animateWeather(timeFactor) {
-        // Move weather cells with wind
-        const windSpeed = 20; // knots
-        const windDirection = 270; // degrees (west)
+        // 随风移动天气单元
+        const windSpeed = 20; // 风速（节）
+        const windDirection = 270; // 风向（度，西风）
         
         const windDX = Math.sin(windDirection * NAV.DEG_TO_RAD) * windSpeed * timeFactor / 3600;
         const windDY = Math.cos(windDirection * NAV.DEG_TO_RAD) * windSpeed * timeFactor / 3600;
@@ -463,7 +463,7 @@ class WeatherRadarService {
             cell.x += windDX;
             cell.y += windDY;
             
-            // Evolve intensity over time
+            // 随时间演变强度
             if (Math.random() < 0.01 * timeFactor) {
                 const intensities = ['LIGHT', 'MODERATE', 'HEAVY', 'EXTREME'];
                 const currentIndex = intensities.indexOf(cell.intensity);
@@ -477,23 +477,23 @@ class WeatherRadarService {
     }
     
     /**
-     * Set radar parameters
+     * 设置雷达参数
      */
     setRadarParameters(range, tilt, gain = 'NORMAL') {
         this.radarRange = range;
         this.radarTilt = tilt;
-        // Gain would affect return sensitivity
+        // 增益会影响回波灵敏度
     }
 }
 
-// Export singleton instances
+// 导出单例实例
 export const terrainService = new TerrainService();
 export const weatherRadarService = new WeatherRadarService();
 
-// Export classes and instances for testing
+// 导出类和实例（用于测试）
 export { TerrainService, WeatherRadarService }; // terrainService and weatherRadarService are already exported above as named exports
 
-// Default export for convenience
+// 默认导出（方便使用）
 export default {
     TerrainService,
     WeatherRadarService

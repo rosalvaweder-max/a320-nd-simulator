@@ -1,12 +1,12 @@
 /**
- * Professional Aviation Symbols for A320 ND Simulator
- * Based on Airbus A320 Navigation Display Standards
+ * 专业航空符号 - A320 ND 模拟器
+ * 基于空客 A320 导航显示器标准
  */
 
 import { COLORS, SYMBOL_SIZES, FONTS } from '../constants.js';
 
 /**
- * Draw professional aircraft symbol (Airbus style)
+ * 绘制专业飞机符号（空客风格）
  */
 export const drawAircraftSymbol = (ctx, x, y, heading, scale = 1) => {
     ctx.save();
@@ -15,38 +15,38 @@ export const drawAircraftSymbol = (ctx, x, y, heading, scale = 1) => {
     
     const size = SYMBOL_SIZES.AIRCRAFT * scale;
     
-    // Airbus A320 ND aircraft symbol (yellow "士" shape)
+    // 空客 A320 ND 飞机符号（黄色"士"字形）
     ctx.strokeStyle = COLORS.YELLOW;
     ctx.fillStyle = COLORS.YELLOW;
     ctx.lineWidth = 2.5 * scale;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     
-    // Add subtle glow effect
+    // 添加微弱的发光效果
     ctx.shadowColor = 'rgba(255, 255, 0, 0.3)';
     ctx.shadowBlur = 4 * scale;
     ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = 0;
     
-    // Main vertical line (fuselage)
+    // 主垂直线（机身）
     ctx.beginPath();
     ctx.moveTo(0, -size * 0.8);
     ctx.lineTo(0, size * 0.6);
     ctx.stroke();
     
-    // Wings
+    // 机翼
     ctx.beginPath();
     ctx.moveTo(-size * 0.8, -size * 0.1);
     ctx.lineTo(size * 0.8, -size * 0.1);
     ctx.stroke();
     
-    // Horizontal stabilizer
+    // 水平尾翼
     ctx.beginPath();
     ctx.moveTo(-size * 0.3, size * 0.5);
     ctx.lineTo(size * 0.3, size * 0.5);
     ctx.stroke();
     
-    // Center reference box (hollow)
+    // 中心参考框（空心）
     ctx.fillStyle = COLORS.BACKGROUND;
     ctx.strokeStyle = COLORS.YELLOW;
     ctx.lineWidth = 1.5 * scale;
@@ -55,7 +55,7 @@ export const drawAircraftSymbol = (ctx, x, y, heading, scale = 1) => {
     ctx.fill();
     ctx.stroke();
     
-    // Center cross
+    // 中心十字
     ctx.beginPath();
     ctx.moveTo(0, -size * 0.2);
     ctx.lineTo(0, size * 0.1);
@@ -67,7 +67,7 @@ export const drawAircraftSymbol = (ctx, x, y, heading, scale = 1) => {
 };
 
 /**
- * Draw VOR navigation aid symbol
+ * 绘制 VOR 导航台符号
  */
 export const drawVORSymbol = (ctx, x, y, frequency = null) => {
     ctx.save();
@@ -75,12 +75,12 @@ export const drawVORSymbol = (ctx, x, y, frequency = null) => {
     
     const size = SYMBOL_SIZES.VOR;
     
-    // VOR symbol (hexagon with dot in center)
+    // VOR 符号（六边形带中心圆点）
     ctx.strokeStyle = COLORS.CYAN;
     ctx.fillStyle = COLORS.CYAN;
     ctx.lineWidth = 2;
     
-    // Hexagon
+    // 六边形
     ctx.beginPath();
     for (let i = 0; i < 6; i++) {
         const angle = (i * 60 - 30) * Math.PI / 180;
@@ -92,12 +92,12 @@ export const drawVORSymbol = (ctx, x, y, frequency = null) => {
     ctx.closePath();
     ctx.stroke();
     
-    // Center dot
+    // 中心圆点
     ctx.beginPath();
     ctx.arc(0, 0, size * 0.3, 0, Math.PI * 2);
     ctx.fill();
     
-    // Frequency label (if provided)
+    // 频率标签（如果提供）
     if (frequency) {
         ctx.fillStyle = COLORS.TEXT_WHITE;
         ctx.font = FONTS.SMALL;
@@ -110,7 +110,7 @@ export const drawVORSymbol = (ctx, x, y, frequency = null) => {
 };
 
 /**
- * Draw NDB navigation aid symbol
+ * 绘制 NDB 导航台符号
  */
 export const drawNDBSymbol = (ctx, x, y, frequency = null) => {
     ctx.save();
@@ -118,17 +118,17 @@ export const drawNDBSymbol = (ctx, x, y, frequency = null) => {
     
     const size = SYMBOL_SIZES.NDB;
     
-    // NDB symbol (circle with radial lines)
+    // NDB 符号（带放射线的圆）
     ctx.strokeStyle = COLORS.CYAN;
     ctx.fillStyle = COLORS.CYAN;
     ctx.lineWidth = 2;
     
-    // Outer circle
+    // 外圆
     ctx.beginPath();
     ctx.arc(0, 0, size, 0, Math.PI * 2);
     ctx.stroke();
     
-    // Radial lines (4 directions)
+    // 放射线（4 个方向）
     for (let i = 0; i < 4; i++) {
         const angle = i * 90 * Math.PI / 180;
         ctx.beginPath();
@@ -137,7 +137,7 @@ export const drawNDBSymbol = (ctx, x, y, frequency = null) => {
         ctx.stroke();
     }
     
-    // Frequency label (if provided)
+    // 频率标签（如果提供）
     if (frequency) {
         ctx.fillStyle = COLORS.TEXT_WHITE;
         ctx.font = FONTS.SMALL;
@@ -150,7 +150,7 @@ export const drawNDBSymbol = (ctx, x, y, frequency = null) => {
 };
 
 /**
- * Draw airport symbol
+ * 绘制机场符号
  */
 export const drawAirportSymbol = (ctx, x, y, icao = null) => {
     ctx.save();
@@ -158,17 +158,17 @@ export const drawAirportSymbol = (ctx, x, y, icao = null) => {
     
     const size = SYMBOL_SIZES.AIRPORT;
     
-    // Airport symbol (circle with cross)
+    // 机场符号（带十字的圆）
     ctx.strokeStyle = COLORS.CYAN;
     ctx.fillStyle = COLORS.CYAN;
     ctx.lineWidth = 2;
     
-    // Circle
+    // 圆
     ctx.beginPath();
     ctx.arc(0, 0, size, 0, Math.PI * 2);
     ctx.stroke();
     
-    // Cross
+    // 十字
     ctx.beginPath();
     ctx.moveTo(-size * 0.7, 0);
     ctx.lineTo(size * 0.7, 0);
@@ -176,7 +176,7 @@ export const drawAirportSymbol = (ctx, x, y, icao = null) => {
     ctx.lineTo(0, size * 0.7);
     ctx.stroke();
     
-    // ICAO code label (if provided)
+    // ICAO 代码标签（如果提供）
     if (icao) {
         ctx.fillStyle = COLORS.TEXT_WHITE;
         ctx.font = FONTS.SMALL;
@@ -189,7 +189,7 @@ export const drawAirportSymbol = (ctx, x, y, icao = null) => {
 };
 
 /**
- * Draw waypoint/fix symbol
+ * 绘制航路点/定位点符号
  */
 export const drawWaypointSymbol = (ctx, x, y, name = null, isActive = false) => {
     ctx.save();
@@ -197,13 +197,13 @@ export const drawWaypointSymbol = (ctx, x, y, name = null, isActive = false) => 
     
     const size = SYMBOL_SIZES.WAYPOINT;
     
-    // Waypoint symbol (diamond for active, square for inactive)
+    // 航路点符号（激活态为菱形，非激活态为方形）
     ctx.strokeStyle = isActive ? COLORS.MAGENTA : COLORS.CYAN;
     ctx.fillStyle = isActive ? COLORS.MAGENTA : COLORS.CYAN;
     ctx.lineWidth = isActive ? 2.5 : 1.5;
     
     if (isActive) {
-        // Active waypoint (diamond)
+        // 激活的航路点（菱形）
         ctx.beginPath();
         ctx.moveTo(0, -size);
         ctx.lineTo(size, 0);
@@ -212,17 +212,17 @@ export const drawWaypointSymbol = (ctx, x, y, name = null, isActive = false) => 
         ctx.closePath();
         ctx.stroke();
         
-        // Fill for active waypoint
+        // 激活航路点的填充
         ctx.fillStyle = 'rgba(255, 0, 255, 0.2)';
         ctx.fill();
     } else {
-        // Inactive waypoint (square)
+        // 非激活航路点（方形）
         ctx.beginPath();
         ctx.rect(-size/2, -size/2, size, size);
         ctx.stroke();
     }
     
-    // Waypoint name label (if provided)
+    // 航路点名称标签（如果提供）
     if (name) {
         ctx.fillStyle = isActive ? COLORS.MAGENTA : COLORS.TEXT_WHITE;
         ctx.font = FONTS.SMALL;
@@ -235,7 +235,7 @@ export const drawWaypointSymbol = (ctx, x, y, name = null, isActive = false) => 
 };
 
 /**
- * Draw TCAS traffic symbol
+ * 绘制 TCAS 交通目标符号
  */
 export const drawTCASTraffic = (ctx, x, y, threatLevel, relativeAlt, verticalSpeed = 0) => {
     ctx.save();
@@ -243,16 +243,16 @@ export const drawTCASTraffic = (ctx, x, y, threatLevel, relativeAlt, verticalSpe
     
     const size = SYMBOL_SIZES.TCAS;
     
-    // Determine color based on threat level
+    // 根据威胁等级确定颜色
     let color;
     let fill = false;
     
     switch (threatLevel) {
-        case 'RA': // Resolution Advisory
+        case 'RA': // 决断咨询
             color = COLORS.TCAS_RA;
             fill = true;
             break;
-        case 'TA': // Traffic Advisory
+        case 'TA': // 交通咨询
             color = COLORS.TCAS_TA;
             fill = true;
             break;
@@ -267,7 +267,7 @@ export const drawTCASTraffic = (ctx, x, y, threatLevel, relativeAlt, verticalSpe
     ctx.fillStyle = color;
     ctx.lineWidth = 1.5;
     
-    // Draw traffic symbol (solid or hollow diamond)
+    // 绘制交通目标符号（实心或空心菱形）
     ctx.beginPath();
     ctx.moveTo(0, -size);
     ctx.lineTo(size, 0);
@@ -281,7 +281,7 @@ export const drawTCASTraffic = (ctx, x, y, threatLevel, relativeAlt, verticalSpe
         ctx.stroke();
     }
     
-    // Altitude difference indicator
+    // 高度差指示器
     if (relativeAlt !== 0) {
         ctx.fillStyle = color;
         ctx.font = '10px monospace';
@@ -296,17 +296,17 @@ export const drawTCASTraffic = (ctx, x, y, threatLevel, relativeAlt, verticalSpe
         ctx.fillText(`${prefix}${altText}`, 0, size + 8);
     }
     
-    // Vertical speed indicator (arrow)
+    // 垂直速度指示器（箭头）
     if (verticalSpeed !== 0) {
         const arrowSize = 4;
         ctx.beginPath();
         if (verticalSpeed > 0) {
-            // Climbing arrow (up)
+            // 上升箭头（向上）
             ctx.moveTo(0, -size - arrowSize);
             ctx.lineTo(-arrowSize, -size);
             ctx.lineTo(arrowSize, -size);
         } else {
-            // Descending arrow (down)
+            // 下降箭头（向下）
             ctx.moveTo(0, size + arrowSize);
             ctx.lineTo(-arrowSize, size);
             ctx.lineTo(arrowSize, size);
@@ -319,13 +319,13 @@ export const drawTCASTraffic = (ctx, x, y, threatLevel, relativeAlt, verticalSpe
 };
 
 /**
- * Draw weather radar return
+ * 绘制气象雷达回波
  */
 export const drawWeatherReturn = (ctx, x, y, intensity, distance) => {
     ctx.save();
     ctx.translate(x, y);
     
-    // Determine color and size based on intensity
+    // 根据强度确定颜色和大小
     let color, radius;
     switch (intensity) {
         case 'EXTREME':
@@ -346,17 +346,17 @@ export const drawWeatherReturn = (ctx, x, y, intensity, distance) => {
             radius = 2;
     }
     
-    // Draw weather return with gradient
+    // 使用渐变绘制气象回波
     const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
-    gradient.addColorStop(0, color + 'CC'); // More opaque in center
-    gradient.addColorStop(1, color + '33'); // More transparent at edge
+    gradient.addColorStop(0, color + 'CC'); // 中心更不透明
+    gradient.addColorStop(1, color + '33'); // 边缘更透明
     
     ctx.fillStyle = gradient;
     ctx.beginPath();
     ctx.arc(0, 0, radius, 0, Math.PI * 2);
     ctx.fill();
     
-    // Add distance label for significant weather
+    // 为显著天气添加距离标签
     if (intensity === 'HEAVY' || intensity === 'EXTREME') {
         ctx.fillStyle = COLORS.TEXT_WHITE;
         ctx.font = '10px monospace';
@@ -369,14 +369,14 @@ export const drawWeatherReturn = (ctx, x, y, intensity, distance) => {
 };
 
 /**
- * Draw terrain contour
+ * 绘制地形等高线
  */
 export const drawTerrainContour = (ctx, points, elevationLevel) => {
     if (points.length < 3) return;
     
     ctx.save();
     
-    // Determine color based on elevation
+    // 根据高程确定颜色
     let color;
     switch (elevationLevel) {
         case 'EXTREME':
@@ -396,7 +396,7 @@ export const drawTerrainContour = (ctx, points, elevationLevel) => {
             color = COLORS.TERRAIN_LOW;
     }
     
-    // Draw filled polygon
+    // 绘制填充多边形
     ctx.fillStyle = color + '40'; // 25% opacity
     ctx.strokeStyle = color + '80'; // 50% opacity
     ctx.lineWidth = 1;
@@ -414,27 +414,27 @@ export const drawTerrainContour = (ctx, points, elevationLevel) => {
 };
 
 /**
- * Draw flight plan route line
+ * 绘制飞行计划航路线
  */
 export const drawFlightPlanRoute = (ctx, waypoints, isActive = false, hasDiscontinuity = false) => {
     if (waypoints.length < 2) return;
     
     ctx.save();
     
-    // Route line style
+    // 航路线样式
     ctx.strokeStyle = isActive ? COLORS.GREEN : COLORS.CYAN;
     ctx.lineWidth = isActive ? 3 : 2;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     
-    // Dashed line for discontinuity
+    // 断点使用虚线
     if (hasDiscontinuity) {
         ctx.setLineDash([5, 3]);
     } else {
         ctx.setLineDash([]);
     }
     
-    // Draw route
+    // 绘制航路
     ctx.beginPath();
     ctx.moveTo(waypoints[0].x, waypoints[0].y);
     for (let i = 1; i < waypoints.length; i++) {
@@ -442,14 +442,14 @@ export const drawFlightPlanRoute = (ctx, waypoints, isActive = false, hasDiscont
     }
     ctx.stroke();
     
-    // Reset line dash
+    // 重置虚线样式
     ctx.setLineDash([]);
     
     ctx.restore();
 };
 
 /**
- * Draw holding pattern
+ * 绘制等待航线
  */
 export const drawHoldingPattern = (ctx, centerX, centerY, inboundCourse, turnDirection = 'right', isActive = false) => {
     ctx.save();
@@ -461,32 +461,32 @@ export const drawHoldingPattern = (ctx, centerX, centerY, inboundCourse, turnDir
     
     ctx.strokeStyle = isActive ? COLORS.MAGENTA : COLORS.CYAN;
     ctx.lineWidth = isActive ? 2.5 : 1.5;
-    ctx.setLineDash([2, 2]); // Dashed for holding
+    ctx.setLineDash([2, 2]); // 等待航线使用虚线
     
-    // Inbound leg
+    // 向台航段
     ctx.beginPath();
     ctx.moveTo(0, -lineLength/2);
     ctx.lineTo(0, 0);
     ctx.stroke();
     
-    // Outbound leg
+    // 背台航段
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.lineTo(0, lineLength/2);
     ctx.stroke();
     
-    // Turn arc
+    // 转弯弧
     ctx.beginPath();
     if (turnDirection === 'right') {
-        // Right turn (standard)
+        // 右转（标准）
         ctx.arc(radius, 0, radius, Math.PI, 0, false);
     } else {
-        // Left turn
+        // 左转
         ctx.arc(-radius, 0, radius, 0, Math.PI, false);
     }
     ctx.stroke();
     
-    // Holding fix symbol
+    // 等待定位点符号
     ctx.fillStyle = isActive ? COLORS.MAGENTA : COLORS.CYAN;
     ctx.beginPath();
     ctx.arc(0, 0, 3, 0, Math.PI * 2);
@@ -496,7 +496,7 @@ export const drawHoldingPattern = (ctx, centerX, centerY, inboundCourse, turnDir
 };
 
 /**
- * Draw wind arrow and data
+ * 绘制风向箭头和数据
  */
 export const drawWindData = (ctx, x, y, windDirection, windSpeed, heading) => {
     ctx.save();
@@ -505,23 +505,23 @@ export const drawWindData = (ctx, x, y, windDirection, windSpeed, heading) => {
     const arrowLength = 30;
     const arrowSize = 6;
     
-    // Calculate relative wind direction
+    // 计算相对风向
     const relativeDirection = windDirection - heading;
     
-    // Draw wind arrow
+    // 绘制风向箭头
     ctx.strokeStyle = COLORS.TEXT_WHITE;
     ctx.fillStyle = COLORS.TEXT_WHITE;
     ctx.lineWidth = 2;
     
     ctx.rotate(relativeDirection * Math.PI / 180);
     
-    // Arrow shaft
+    // 箭杆
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.lineTo(0, -arrowLength);
     ctx.stroke();
     
-    // Arrow head
+    // 箭头
     ctx.beginPath();
     ctx.moveTo(0, -arrowLength);
     ctx.lineTo(-arrowSize, -arrowLength + arrowSize);
@@ -529,7 +529,7 @@ export const drawWindData = (ctx, x, y, windDirection, windSpeed, heading) => {
     ctx.closePath();
     ctx.fill();
     
-    // Wind speed text
+    // 风速文字
     ctx.rotate(-relativeDirection * Math.PI / 180);
     ctx.fillStyle = COLORS.TEXT_WHITE;
     ctx.font = FONTS.SMALL;
@@ -541,12 +541,12 @@ export const drawWindData = (ctx, x, y, windDirection, windSpeed, heading) => {
 };
 
 /**
- * Draw range ring and distance scale
+ * 绘制量程环和距离刻度
  */
 export const drawRangeRing = (ctx, cx, cy, radius, range) => {
     ctx.save();
     
-    // Range ring circle
+    // 量程环圆圈
     ctx.strokeStyle = COLORS.COMPASS_GREY;
     ctx.lineWidth = 1;
     ctx.setLineDash([2, 2]);
@@ -555,16 +555,16 @@ export const drawRangeRing = (ctx, cx, cy, radius, range) => {
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
     ctx.stroke();
     
-    // Reset line dash
+    // 重置虚线样式
     ctx.setLineDash([]);
     
-    // Range label
+    // 量程标签
     ctx.fillStyle = COLORS.TEXT_WHITE;
     ctx.font = FONTS.SMALL;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
-    // Place labels at cardinal points
+    // 在基本方向点放置标签
     const positions = [
         { x: cx, y: cy - radius - 10, text: `${range}NM` },
         { x: cx + radius + 10, y: cy, text: `${range}NM` },
@@ -580,7 +580,7 @@ export const drawRangeRing = (ctx, cx, cy, radius, range) => {
 };
 
 /**
- * Draw display grid (for PLAN mode)
+ * 绘制显示网格（用于 PLAN 模式）
  */
 export const drawDisplayGrid = (ctx, width, height, spacing = 50) => {
     ctx.save();
@@ -589,7 +589,7 @@ export const drawDisplayGrid = (ctx, width, height, spacing = 50) => {
     ctx.lineWidth = 0.5;
     ctx.globalAlpha = 0.3;
     
-    // Vertical lines
+    // 垂直线
     for (let x = spacing; x < width; x += spacing) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
@@ -597,7 +597,7 @@ export const drawDisplayGrid = (ctx, width, height, spacing = 50) => {
         ctx.stroke();
     }
     
-    // Horizontal lines
+    // 水平线
     for (let y = spacing; y < height; y += spacing) {
         ctx.beginPath();
         ctx.moveTo(0, y);
@@ -609,29 +609,29 @@ export const drawDisplayGrid = (ctx, width, height, spacing = 50) => {
 };
 
 /**
- * Apply CRT/LCD display effects
+ * 应用 CRT/LCD 显示效果
  */
 export const applyDisplayEffects = (ctx, width, height, effectType = 'LCD') => {
     ctx.save();
     
     if (effectType === 'CRT') {
-        // CRT phosphor glow effect
+        // CRT 荧光粉发光效果
         ctx.globalCompositeOperation = 'overlay';
         ctx.fillStyle = COLORS.CRT_PHOSPHOR;
         ctx.fillRect(0, 0, width, height);
         
-        // Scan lines
+        // 扫描线
         ctx.globalCompositeOperation = 'multiply';
         ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
         for (let y = 0; y < height; y += 2) {
             ctx.fillRect(0, y, width, 1);
         }
     } else if (effectType === 'LCD') {
-        // LCD pixel grid effect
+        // LCD 像素网格效果
         ctx.globalCompositeOperation = 'multiply';
         ctx.fillStyle = COLORS.PIXEL_GRID;
         
-        // Draw subtle pixel grid
+        // 绘制细微的像素网格
         const pixelSize = 2;
         for (let x = 0; x < width; x += pixelSize) {
             for (let y = 0; y < height; y += pixelSize) {

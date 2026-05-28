@@ -1,23 +1,23 @@
 /**
- * TCAS (Traffic Collision Avoidance System) Service
- * Professional-grade TCAS II simulation for A320 ND display
- * Implements resolution advisories, traffic advisories, and proximate traffic
+ * TCAS（交通防撞系统）服务
+ * 面向 A320 ND 显示的专业级 TCAS II 仿真
+ * 实现决断咨询（RA）、交通咨询（TA）和邻近交通显示
  */
 
 import { COLORS, NAV } from '../constants.js';
 
 /**
- * TCAS Threat Levels
+ * TCAS 威胁等级
  */
 export const TCAS_THREAT_LEVELS = {
-    RA: 'RA',           // Resolution Advisory (highest threat)
-    TA: 'TA',           // Traffic Advisory
-    PROXIMATE: 'PROXIMATE', // Proximate traffic
-    OTHER: 'OTHER'      // Other traffic
+    RA: 'RA',           // 决断咨询（最高威胁等级）
+    TA: 'TA',           // 交通咨询
+    PROXIMATE: 'PROXIMATE', // 邻近交通
+    OTHER: 'OTHER'      // 其他交通
 };
 
 /**
- * TCAS Resolution Advisory Types
+ * TCAS 决断咨询类型
  */
 export const RA_TYPES = {
     CLIMB: 'CLIMB',
@@ -33,17 +33,17 @@ export const RA_TYPES = {
 };
 
 /**
- * Aircraft types for TCAS display
+ * TCAS 显示的飞机类型
  */
 export const AIRCRAFT_TYPES = {
-    HEAVY: 'HEAVY',     // B747, A380, etc.
-    LARGE: 'LARGE',     // B737, A320, etc.
-    SMALL: 'SMALL',     // CRJ, E-Jet, etc.
-    HELICOPTER: 'HELICOPTER'
+    HEAVY: 'HEAVY',     // 重型机（B747、A380 等）
+    LARGE: 'LARGE',     // 大型机（B737、A320 等）
+    SMALL: 'SMALL',     // 小型机（CRJ、E-Jet 等）
+    HELICOPTER: 'HELICOPTER' // 直升机
 };
 
 /**
- * TCAS Traffic Object
+ * TCAS 交通目标对象
  */
 class TCASTraffic {
     constructor(id, callsign, type = AIRCRAFT_TYPES.LARGE) {
@@ -51,7 +51,7 @@ class TCASTraffic {
         this.callsign = callsign;
         this.type = type;
         
-        // Position and movement
+        // 位置与运动
         this.lat = 0;
         this.lon = 0;
         this.altitude = 0;
@@ -59,25 +59,25 @@ class TCASTraffic {
         this.speed = 0;
         this.verticalSpeed = 0;
         
-        // Relative to ownship
+        // 相对于本机的数据
         this.bearing = 0;
         this.distance = 0;
         this.relativeAlt = 0;
         
-        // TCAS state
+        // TCAS 状态
         this.threatLevel = TCAS_THREAT_LEVELS.OTHER;
         this.raType = null;
-        this.raSense = null; // UP or DOWN
+        this.raSense = null; // UP（上升）或 DOWN（下降）
         this.timeToClosestApproach = Infinity;
         this.separation = Infinity;
         
-        // Display properties
+        // 显示属性
         this.lastUpdate = Date.now();
         this.isValid = true;
     }
     
     /**
-     * Update traffic position and calculate threat
+     * 更新交通目标位置并计算威胁等级
      */
     update(ownship, trafficData) {
         this.lat = trafficData.lat || this.lat;
@@ -87,54 +87,54 @@ class TCASTraffic {
         this.speed = trafficData.speed || this.speed;
         this.verticalSpeed = trafficData.verticalSpeed || this.verticalSpeed;
         
-        // Calculate relative position
+        // 计算相对位置
         this.calculateRelativePosition(ownship);
         
-        // Calculate threat level
+        // 计算威胁等级
         this.calculateThreatLevel(ownship);
         
         this.lastUpdate = Date.now();
     }
     
     /**
-     * Calculate position relative to ownship
+     * 计算相对于本机的位置
      */
     calculateRelativePosition(ownship) {
-        // Simplified calculation (for demo purposes)
-        // In real implementation, use great circle distance and bearing
+        // 简化计算（用于演示）
+        // 在实际实现中，应使用大圆距离和方位角
         
         const dx = this.lon - ownship.lon;
         const dy = this.lat - ownship.lat;
         
-        // Convert to nautical miles (approximate)
-        const nmPerDegree = 60; // Approximation
+        // 转换为海里（近似值）
+        const nmPerDegree = 60; // 近似值
         this.distance = Math.sqrt(dx * dx + dy * dy) * nmPerDegree;
         
-        // Calculate bearing (0 = north, 90 = east)
+        // 计算方位角（0 = 北，90 = 东）
         this.bearing = (Math.atan2(dx, dy) * NAV.RAD_TO_DEG + 360) % 360;
         
-        // Relative altitude
+        // 相对高度
         this.relativeAlt = this.altitude - ownship.altitude;
     }
     
     /**
-     * Calculate TCAS threat level based on separation
+     * 基于间隔计算 TCAS 威胁等级
      */
     calculateThreatLevel(ownship) {
-        // TCAS II thresholds (simplified)
-        const TA_THRESHOLD = 6; // NM for traffic advisory
-        const RA_THRESHOLD = 3; // NM for resolution advisory
-        const ALT_THRESHOLD_TA = 1200; // feet for TA
-        const ALT_THRESHOLD_RA = 700; // feet for RA
+        // TCAS II 阈值（简化版）
+        const TA_THRESHOLD = 6; // 交通咨询距离阈值（海里）
+        const RA_THRESHOLD = 3; // 决断咨询距离阈值（海里）
+        const ALT_THRESHOLD_TA = 1200; // 交通咨询高度差阈值（英尺）
+        const ALT_THRESHOLD_RA = 700; // 决断咨询高度差阈值（英尺）
         
         const horizontalSeparation = this.distance;
         const verticalSeparation = Math.abs(this.relativeAlt);
         
-        // Calculate time to closest approach (simplified)
+        // 计算最接近点时间（简化版）
         const relativeSpeed = Math.abs(this.speed - ownship.speed);
         this.timeToClosestApproach = relativeSpeed > 0 ? horizontalSeparation / relativeSpeed : Infinity;
         
-        // Determine threat level
+        // 确定威胁等级
         if (horizontalSeparation <= RA_THRESHOLD && verticalSeparation <= ALT_THRESHOLD_RA) {
             this.threatLevel = TCAS_THREAT_LEVELS.RA;
             this.determineRA(ownship);
@@ -151,21 +151,21 @@ class TCASTraffic {
         
         this.separation = Math.sqrt(
             Math.pow(horizontalSeparation, 2) + 
-            Math.pow(verticalSeparation / 6076.12, 2) // Convert feet to NM
+            Math.pow(verticalSeparation / 6076.12, 2) // 将英尺转换为海里
         );
     }
     
     /**
-     * Determine Resolution Advisory type
+     * 确定决断咨询类型
      */
     determineRA(ownship) {
-        // Simplified RA logic
-        const verticalClosure = this.relativeAlt / this.timeToClosestApproach; // feet per minute
+        // 简化版 RA 逻辑
+        const verticalClosure = this.relativeAlt / this.timeToClosestApproach; // 英尺/分钟
         
         if (this.relativeAlt > 0) {
-            // Traffic is above
+            // 目标在本机上方
             if (verticalClosure > 1000) {
-                // Rapid closure from above
+                // 从上方快速接近
                 this.raType = RA_TYPES.DESCEND;
                 this.raSense = 'DOWN';
             } else if (verticalClosure > 500) {
@@ -175,9 +175,9 @@ class TCASTraffic {
                 this.raType = RA_TYPES.MAINTAIN_VERTICAL_SPEED;
             }
         } else {
-            // Traffic is below
+            // 目标在本机下方
             if (verticalClosure < -1000) {
-                // Rapid closure from below
+                // 从下方快速接近
                 this.raType = RA_TYPES.CLIMB;
                 this.raSense = 'UP';
             } else if (verticalClosure < -500) {
@@ -190,7 +190,7 @@ class TCASTraffic {
     }
     
     /**
-     * Get display color based on threat level
+     * 根据威胁等级获取显示颜色
      */
     getDisplayColor() {
         switch (this.threatLevel) {
@@ -206,7 +206,7 @@ class TCASTraffic {
     }
     
     /**
-     * Get symbol size based on aircraft type
+     * 根据飞机类型获取符号大小
      */
     getSymbolSize() {
         switch (this.type) {
@@ -224,7 +224,7 @@ class TCASTraffic {
     }
     
     /**
-     * Check if traffic data is stale
+     * 检查交通数据是否过期
      */
     isStale(timeout = 5000) {
         return Date.now() - this.lastUpdate > timeout;
@@ -232,26 +232,26 @@ class TCASTraffic {
 }
 
 /**
- * Main TCAS Service
+ * 主 TCAS 服务
  */
 class TCASService {
     constructor() {
         this.traffic = new Map();
         this.ownship = null;
-        this.mode = 'TA/RA'; // TA/RA, TA ONLY, or OFF
+        this.mode = 'TA/RA'; // TA/RA（完全模式）、TA ONLY（仅TA）或 OFF（关闭）
         this.altitudeReporting = true;
-        this.displayRange = 40; // NM
+        this.displayRange = 40; // 显示范围（海里）
         this.lastRA = null;
         this.raActive = false;
         this.raAcknowledged = false;
         
-        // Performance monitoring
-        this.updateInterval = 1000; // ms
+        // 性能监控
+        this.updateInterval = 1000; // 更新间隔（毫秒）
         this.updateTimer = null;
     }
     
     /**
-     * Initialize TCAS with ownship data
+     * 使用本机数据初始化 TCAS
      */
     initialize(ownshipData) {
         this.ownship = {
@@ -267,7 +267,7 @@ class TCASService {
     }
     
     /**
-     * Start periodic TCAS updates
+     * 启动周期性 TCAS 更新
      */
     startUpdates() {
         if (this.updateTimer) {
@@ -281,7 +281,7 @@ class TCASService {
     }
     
     /**
-     * Stop TCAS updates
+     * 停止 TCAS 更新
      */
     stopUpdates() {
         if (this.updateTimer) {
@@ -291,7 +291,7 @@ class TCASService {
     }
     
     /**
-     * Add or update traffic
+     * 添加或更新交通目标
      */
     updateTraffic(trafficData) {
         const id = trafficData.id || `traffic-${Date.now()}-${Math.random()}`;
@@ -308,7 +308,7 @@ class TCASService {
         const traffic = this.traffic.get(id);
         traffic.update(this.ownship, trafficData);
         
-        // Check for RA activation
+        // 检查是否触发决断咨询
         if (traffic.threatLevel === TCAS_THREAT_LEVELS.RA) {
             this.activateRA(traffic);
         }
@@ -317,19 +317,19 @@ class TCASService {
     }
     
     /**
-     * Update all traffic positions
+     * 更新所有交通目标位置
      */
     updateAllTraffic() {
         if (!this.ownship) return;
         
-        // In real implementation, this would get data from ADS-B or simulator
-        // For demo, we'll simulate some movement
+        // 在实际实现中，这将从 ADS-B 或模拟器获取数据
+        // 演示模式下，模拟一些运动
         this.traffic.forEach(traffic => {
-            // Simulate movement
+            // 模拟运动
             const movement = {
                 lat: traffic.lat + (Math.random() - 0.5) * 0.01,
                 lon: traffic.lon + (Math.random() - 0.5) * 0.01,
-                altitude: traffic.altitude + (traffic.verticalSpeed / 60), // feet per second
+                altitude: traffic.altitude + (traffic.verticalSpeed / 60), // 英尺/秒
                 heading: traffic.heading,
                 speed: traffic.speed,
                 verticalSpeed: traffic.verticalSpeed
@@ -340,7 +340,7 @@ class TCASService {
     }
     
     /**
-     * Remove stale traffic
+     * 移除过期的交通目标
      */
     cleanupStaleTraffic() {
         const staleIds = [];
@@ -357,7 +357,7 @@ class TCASService {
     }
     
     /**
-     * Activate Resolution Advisory
+     * 激活决断咨询
      */
     activateRA(traffic) {
         this.raActive = true;
@@ -373,17 +373,17 @@ class TCASService {
         
         this.raAcknowledged = false;
         
-        // In real TCAS, this would trigger aural alerts
+        // 在实际 TCAS 中，这将触发语音告警
         console.log(`TCAS RA: ${traffic.raType} - Traffic: ${traffic.callsign}`);
     }
     
     /**
-     * Acknowledge current RA
+     * 确认当前决断咨询
      */
     acknowledgeRA() {
         this.raAcknowledged = true;
         
-        // RA remains active until conflict is resolved
+        // RA 保持激活状态直到冲突解除
         setTimeout(() => {
             if (this.raActive) {
                 this.checkRAResolution();
@@ -392,7 +392,7 @@ class TCASService {
     }
     
     /**
-     * Check if RA conflict is resolved
+     * 检查 RA 冲突是否已解除
      */
     checkRAResolution() {
         if (!this.lastRA || !this.raActive) return;
@@ -406,7 +406,7 @@ class TCASService {
     }
     
     /**
-     * Get traffic for display within range
+     * 获取范围内用于显示的交通目标
      */
     getDisplayTraffic() {
         const displayTraffic = [];
@@ -429,7 +429,7 @@ class TCASService {
             }
         });
         
-        // Sort by threat level (RA first, then TA, then others)
+        // 按威胁等级排序（RA 优先，然后是 TA，最后是其他）
         displayTraffic.sort((a, b) => {
             const threatOrder = {
                 [TCAS_THREAT_LEVELS.RA]: 0,
@@ -445,7 +445,7 @@ class TCASService {
     }
     
     /**
-     * Get current RA information
+     * 获取当前决断咨询信息
      */
     getCurrentRA() {
         if (!this.raActive) return null;
@@ -458,7 +458,7 @@ class TCASService {
     }
     
     /**
-     * Generate test traffic for demonstration
+     * 生成用于演示的测试交通目标
      */
     generateTestTraffic(count = 8) {
         const testCallsigns = [
@@ -497,7 +497,7 @@ class TCASService {
     }
     
     /**
-     * Set TCAS mode
+     * 设置 TCAS 模式
      */
     setMode(mode) {
         const validModes = ['TA/RA', 'TA ONLY', 'OFF'];
@@ -513,14 +513,14 @@ class TCASService {
     }
     
     /**
-     * Set display range
+     * 设置显示范围
      */
     setDisplayRange(range) {
         this.displayRange = range;
     }
     
     /**
-     * Get TCAS status
+     * 获取 TCAS 状态
      */
     getStatus() {
         return {
@@ -534,13 +534,13 @@ class TCASService {
     }
 }
 
-// Export singleton instance
+// 导出单例实例
 export const tcasService = new TCASService();
 
-// Export classes and constants for testing
+// 导出类和常量（用于测试）
 export { TCASService, TCASTraffic }; // tcasService is already exported above as named export, TCAS_THREAT_LEVELS is already exported at line 12, RA_TYPES is already exported at line 22, AIRCRAFT_TYPES is already exported at line 38
 
-// Default export for convenience
+// 默认导出（方便使用）
 export default {
     TCASService,
     TCASTraffic

@@ -1,67 +1,67 @@
-// A320 Navigation Display Authentic Colors (Based on Airbus Standards)
+// A320 导航显示器真实颜色（基于空客标准）
 export const COLORS = {
-    // Background and Display
+    // 背景与显示
     BACKGROUND: '#000000',
     DISPLAY_BACKGROUND: '#000000',
     DISPLAY_GRID: '#1a1a1a',
     
-    // Primary Colors (Airbus Standard)
-    MAGENTA: '#FF00FF',      // Active flight plan, selected data
-    CYAN: '#00FFFF',         // Flight plan, waypoints, navaids
-    GREEN: '#00FF00',        // Active leg, track line
-    YELLOW: '#FFFF00',       // Aircraft symbol, caution indications
-    AMBER: '#FF9900',        // Warning, advisory
-    RED: '#FF0000',          // Alert, failure
+    // 主色（空客标准）
+    MAGENTA: '#FF00FF',      // 激活飞行计划、选定数据
+    CYAN: '#00FFFF',         // 飞行计划、航路点、导航台
+    GREEN: '#00FF00',        // 激活航段、航迹线
+    YELLOW: '#FFFF00',       // 飞机符号、注意指示
+    AMBER: '#FF9900',        // 警告、咨询
+    RED: '#FF0000',          // 警戒、故障
     
-    // Text and Labels
-    TEXT_WHITE: '#FFFFFF',   // Normal text
-    TEXT_GREY: '#AAAAAA',    // Dimmed text
-    TEXT_BRIGHT: '#F0F0F0',  // Bright text
+    // 文本与标签
+    TEXT_WHITE: '#FFFFFF',   // 普通文本
+    TEXT_GREY: '#AAAAAA',    // 暗淡文本
+    TEXT_BRIGHT: '#F0F0F0',  // 高亮文本
     
-    // Compass and Scale
+    // 罗盘与刻度
     COMPASS_WHITE: '#FFFFFF',
     COMPASS_GREY: '#888888',
     COMPASS_MARKER: '#00FFFF',
     
-    // Terrain and Weather
-    TERRAIN_LOW: '#004400',      // 0-1000ft
-    TERRAIN_MEDIUM: '#008800',   // 1000-2000ft
-    TERRAIN_HIGH: '#00CC00',     // 2000-5000ft
-    TERRAIN_VERY_HIGH: '#FFFF00', // 5000-10000ft
-    TERRAIN_EXTREME: '#FF0000',  // 10000+ ft
+    // 地形与天气
+    TERRAIN_LOW: '#004400',      // 0-1000英尺
+    TERRAIN_MEDIUM: '#008800',   // 1000-2000英尺
+    TERRAIN_HIGH: '#00CC00',     // 2000-5000英尺
+    TERRAIN_VERY_HIGH: '#FFFF00', // 5000-10000英尺
+    TERRAIN_EXTREME: '#FF0000',  // 10000+英尺
     
-    WEATHER_LIGHT: '#00AAFF',    // Light precipitation
-    WEATHER_MODERATE: '#0088FF', // Moderate precipitation
-    WEATHER_HEAVY: '#0000FF',    // Heavy precipitation
-    WEATHER_EXTREME: '#FF00FF',  // Extreme precipitation
+    WEATHER_LIGHT: '#00AAFF',    // 弱降水
+    WEATHER_MODERATE: '#0088FF', // 中等降水
+    WEATHER_HEAVY: '#0000FF',    // 强降水
+    WEATHER_EXTREME: '#FF00FF',  // 极端降水
     
-    // TCAS Traffic
-    TCAS_PROXIMATE: '#00FF00',   // Proximate traffic
-    TCAS_TA: '#FFFF00',          // Traffic Advisory
-    TCAS_RA: '#FF0000',          // Resolution Advisory
+    // TCAS 交通
+    TCAS_PROXIMATE: '#00FF00',   // 邻近飞机
+    TCAS_TA: '#FFFF00',          // 交通咨询
+    TCAS_RA: '#FF0000',          // 决断咨询
     
-    // Special Effects
+    // 特殊效果
     GLOW_EFFECT: 'rgba(255, 255, 255, 0.1)',
     PIXEL_GRID: 'rgba(100, 100, 100, 0.05)',
     CRT_PHOSPHOR: 'rgba(0, 255, 0, 0.05)',
     
-    // Backward compatibility aliases for drawingUtils.js
-    AIRCRAFT_YELLOW: '#FFFF00',      // Alias for YELLOW
-    LABEL_CYAN: '#00FFFF',           // Alias for CYAN
-    VALUE_GREEN: '#00FF00',          // Alias for GREEN
-    TEXT_MAGENTA: '#FF00FF',         // Alias for MAGENTA
-    TEXT_AMBER: '#FF9900',           // Alias for AMBER
-    TEXT_RED: '#FF0000',             // Alias for RED
-    HEADING_BLUE: '#0000FF',         // Blue for heading (not in Airbus standard but used in old code)
-    TRACK_GREEN: '#00FF00',          // Alias for GREEN
-    ACTIVE_PATH: '#FF00FF',          // Alias for MAGENTA
-    EGPWS_LOW: '#004400',            // Alias for TERRAIN_LOW
-    EGPWS_MED: '#008800',            // Alias for TERRAIN_MEDIUM
-    EGPWS_HIGH: '#00CC00',           // Alias for TERRAIN_HIGH
-    EGPWS_WATER: '#0000AA',          // Water color for terrain display
+    // 向后兼容别名（供 drawingUtils.js 使用）
+    AIRCRAFT_YELLOW: '#FFFF00',      // YELLOW 的别名
+    LABEL_CYAN: '#00FFFF',           // CYAN 的别名
+    VALUE_GREEN: '#00FF00',          // GREEN 的别名
+    TEXT_MAGENTA: '#FF00FF',         // MAGENTA 的别名
+    TEXT_AMBER: '#FF9900',           // AMBER 的别名
+    TEXT_RED: '#FF0000',             // RED 的别名
+    HEADING_BLUE: '#0000FF',         // 航向蓝色（非空客标准，旧代码使用）
+    TRACK_GREEN: '#00FF00',          // GREEN 的别名
+    ACTIVE_PATH: '#FF00FF',          // MAGENTA 的别名
+    EGPWS_LOW: '#004400',            // TERRAIN_LOW 的别名
+    EGPWS_MED: '#008800',            // TERRAIN_MEDIUM 的别名
+    EGPWS_HIGH: '#00CC00',           // TERRAIN_HIGH 的别名
+    EGPWS_WATER: '#0000AA',          // 地形显示的水面颜色
 };
 
-// A320 ND Display Modes
+// A320 ND 显示模式
 export const ND_MODES = {
     ROSE_NAV: 'ROSE_NAV',
     ROSE_ILS: 'ROSE_ILS',
@@ -70,10 +70,10 @@ export const ND_MODES = {
     PLAN: 'PLAN',
 };
 
-// A320 ND Range Settings (in nautical miles)
+// A320 ND 量程设置（海里）
 export const ND_RANGES = [10, 20, 40, 80, 160, 320, 640];
 
-// Airbus Font Specifications
+// 空客字体规格
 export const FONTS = {
     PRIMARY: '16px "AirbusDisp", "Segoe UI", sans-serif',
     SECONDARY: '14px "AirbusDisp", "Segoe UI", sans-serif',
@@ -82,58 +82,58 @@ export const FONTS = {
     BOLD: 'bold 16px "AirbusDisp", "Segoe UI", sans-serif',
 };
 
-// Airbus Symbol Sizes
+// 空客符号尺寸
 export const SYMBOL_SIZES = {
-    AIRCRAFT: 24,
-    WAYPOINT: 8,
-    VOR: 10,
-    NDB: 8,
-    AIRPORT: 12,
-    TCAS: 6,
+    AIRCRAFT: 24,   // 飞机符号
+    WAYPOINT: 8,    // 航路点
+    VOR: 10,        // VOR 导航台
+    NDB: 8,         // NDB 导航台
+    AIRPORT: 12,    // 机场
+    TCAS: 6,        // TCAS 目标
 };
 
-// Display Constants
+// 显示常量
 export const DISPLAY = {
-    WIDTH: 600,
-    HEIGHT: 600,
-    PADDING: 20,
-    COMPASS_RADIUS: 250,
-    ARC_ANGLE: 100, // degrees for ARC mode
+    WIDTH: 600,         // 显示宽度（像素）
+    HEIGHT: 600,        // 显示高度（像素）
+    PADDING: 20,        // 内边距
+    COMPASS_RADIUS: 250, // 罗盘半径
+    ARC_ANGLE: 100,     // ARC 模式角度（度）
 };
 
-// Navigation Constants
+// 导航常量
 export const NAV = {
-    EARTH_RADIUS_NM: 3440.065, // Earth radius in nautical miles
-    DEG_TO_RAD: Math.PI / 180,
-    RAD_TO_DEG: 180 / Math.PI,
-    MAX_BANK_ANGLE: 30, // degrees for display limitation
+    EARTH_RADIUS_NM: 3440.065, // 地球半径（海里）
+    DEG_TO_RAD: Math.PI / 180,  // 角度转弧度系数
+    RAD_TO_DEG: 180 / Math.PI,  // 弧度转角度系数
+    MAX_BANK_ANGLE: 30,         // 最大坡度角（度，显示限制用）
 };
 
-// Professional Aviation Waypoints and Navaids
+// 专业航空航路点与导航台
 export const NAV_AIDS = {
-    // Waypoint Types
+    // 航路点类型
     WAYPOINT_TYPES: {
-        FIX: 'FIX',
-        VOR: 'VOR',
-        NDB: 'NDB',
-        DME: 'DME',
-        TACAN: 'TACAN',
-        AIRPORT: 'AIRPORT',
-        RUNWAY: 'RUNWAY',
-        ILS: 'ILS',
+        FIX: 'FIX',         // 定位点
+        VOR: 'VOR',         // 甚高频全向信标台
+        NDB: 'NDB',         // 无方向信标台
+        DME: 'DME',         // 测距仪
+        TACAN: 'TACAN',     // 战术空中导航
+        AIRPORT: 'AIRPORT', // 机场
+        RUNWAY: 'RUNWAY',   // 跑道
+        ILS: 'ILS',         // 仪表着陆系统
     },
     
-    // Waypoint Status
+    // 航路点状态
     WAYPOINT_STATUS: {
-        ACTIVE: 'active',
-        DIRECT: 'direct',
-        INACTIVE: 'inactive',
-        DISCONTINUITY: 'discontinuity',
-        HOLD: 'hold',
+        ACTIVE: 'active',           // 激活
+        DIRECT: 'direct',           // 直飞
+        INACTIVE: 'inactive',       // 未激活
+        DISCONTINUITY: 'discontinuity', // 断点
+        HOLD: 'hold',               // 等待
     },
 };
 
-// Realistic Waypoints (European Airspace Example)
+// 真实航路点（欧洲空域示例）
 export const MOCK_WAYPOINTS = [
     {
         id: 'wp-lfpg',
@@ -197,7 +197,7 @@ export const MOCK_WAYPOINTS = [
     },
 ];
 
-// Realistic TCAS Traffic
+// 真实 TCAS 交通数据
 export const MOCK_TCAS = [
     {
         id: 'tcas-b737',
@@ -206,7 +206,7 @@ export const MOCK_TCAS = [
         distance: 12.5,
         relativeAlt: 1200,
         verticalSpeed: 1500,
-        threatLevel: 'RA',
+        threatLevel: 'RA',      // 决断咨询
         type: 'B737',
     },
     {
@@ -216,7 +216,7 @@ export const MOCK_TCAS = [
         distance: 8.2,
         relativeAlt: -800,
         verticalSpeed: -1200,
-        threatLevel: 'TA',
+        threatLevel: 'TA',      // 交通咨询
         type: 'A320',
     },
     {
@@ -226,7 +226,7 @@ export const MOCK_TCAS = [
         distance: 25.0,
         relativeAlt: 500,
         verticalSpeed: 0,
-        threatLevel: 'PROXIMATE',
+        threatLevel: 'PROXIMATE', // 邻近飞机
         type: 'B777',
     },
     {
@@ -236,34 +236,34 @@ export const MOCK_TCAS = [
         distance: 18.7,
         relativeAlt: -1500,
         verticalSpeed: -800,
-        threatLevel: 'OTHER',
+        threatLevel: 'OTHER',    // 其他飞机
         type: 'CRJ',
     },
 ];
 
-// Weather Radar Data
+// 天气雷达数据
 export const MOCK_WEATHER = [
     {
         bearing: 30,
         distance: 40,
-        intensity: 'HEAVY',
-        turbulence: true,
+        intensity: 'HEAVY',     // 强降水
+        turbulence: true,       // 有颠簸
     },
     {
         bearing: 120,
         distance: 25,
-        intensity: 'MODERATE',
+        intensity: 'MODERATE',  // 中等降水
         turbulence: false,
     },
     {
         bearing: 210,
         distance: 60,
-        intensity: 'LIGHT',
+        intensity: 'LIGHT',     // 弱降水
         turbulence: false,
     },
 ];
 
-// Terrain Data
+// 地形数据
 export const MOCK_TERRAIN = [
     {
         minX: -200,
@@ -272,7 +272,7 @@ export const MOCK_TERRAIN = [
         maxY: 150,
         minElevation: 0,
         maxElevation: 500,
-        color: 'TERRAIN_LOW',
+        color: 'TERRAIN_LOW',   // 低海拔
     },
     {
         minX: -50,
@@ -281,7 +281,7 @@ export const MOCK_TERRAIN = [
         maxY: 50,
         minElevation: 1000,
         maxElevation: 2500,
-        color: 'TERRAIN_MEDIUM',
+        color: 'TERRAIN_MEDIUM', // 中海拔
     },
     {
         minX: 100,
@@ -290,6 +290,6 @@ export const MOCK_TERRAIN = [
         maxY: 0,
         minElevation: 3000,
         maxElevation: 6000,
-        color: 'TERRAIN_HIGH',
+        color: 'TERRAIN_HIGH',   // 高海拔
     },
 ];

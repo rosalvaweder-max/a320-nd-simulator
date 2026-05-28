@@ -46,7 +46,7 @@ const WaypointEditor = ({ waypoint, onSave, onCancel }) => {
             ]),
 
             React.createElement('form', { key: 'form', onSubmit: handleSubmit, className: 'space-y-4' }, [
-                // Name
+                // 名称输入
                 React.createElement('div', { key: 'name-field' }, [
                     React.createElement('label', { className: 'block text-gray-500 text-xs font-bold uppercase tracking-wider mb-1' }, '航路点名称'),
                     React.createElement('input', {
@@ -59,7 +59,7 @@ const WaypointEditor = ({ waypoint, onSave, onCancel }) => {
                     })
                 ]),
 
-                // Type
+                // 类型选择
                 React.createElement('div', { key: 'type-field' }, [
                     React.createElement('label', { className: 'block text-gray-500 text-xs font-bold uppercase tracking-wider mb-1' }, '类型'),
                     React.createElement('select', {
@@ -73,7 +73,7 @@ const WaypointEditor = ({ waypoint, onSave, onCancel }) => {
                     ])
                 ]),
 
-                // Coordinates
+                // 坐标输入
                 React.createElement('div', { key: 'coords-field', className: 'grid grid-cols-2 gap-4' }, [
                     React.createElement('div', { key: 'x' }, [
                         React.createElement('label', { className: 'block text-gray-500 text-xs font-bold uppercase tracking-wider mb-1' }, 'X 坐标 (NM)'),
@@ -99,7 +99,7 @@ const WaypointEditor = ({ waypoint, onSave, onCancel }) => {
                     ])
                 ]),
 
-                // Connected checkbox
+                // 航路连线复选框
                 React.createElement('div', { key: 'connected-field' }, [
                     React.createElement('label', { className: 'block text-gray-500 text-xs font-bold uppercase tracking-wider mb-1' }, '航路连线'),
                     React.createElement('div', { className: 'flex items-center gap-3' }, [
@@ -115,7 +115,7 @@ const WaypointEditor = ({ waypoint, onSave, onCancel }) => {
                     ])
                 ]),
 
-                // Altitude
+                // 高度限制输入
                 React.createElement('div', { key: 'alt-field' }, [
                     React.createElement('label', { className: 'block text-gray-500 text-xs font-bold uppercase tracking-wider mb-1' }, '高度限制 (FT, 可选)'),
                     React.createElement('input', {
@@ -127,7 +127,7 @@ const WaypointEditor = ({ waypoint, onSave, onCancel }) => {
                     })
                 ]),
 
-                // Buttons
+                // 操作按钮（取消/保存）
                 React.createElement('div', { key: 'buttons', className: 'flex gap-4 pt-4' }, [
                     React.createElement('button', {
                         type: 'button',

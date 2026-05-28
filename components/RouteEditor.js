@@ -32,7 +32,7 @@ const RouteEditor = ({ routeId, onBack }) => {
     };
 
     return React.createElement('div', { className: 'flex flex-col h-full space-y-6' }, [
-        // Navigation and Title
+        // 导航和标题
         React.createElement('div', { key: 'nav', className: 'flex items-center gap-4 mb-2' }, [
             React.createElement('button', {
                 onClick: onBack,
@@ -46,7 +46,7 @@ const RouteEditor = ({ routeId, onBack }) => {
             })
         ]),
 
-        // Waypoints List Header
+        // 航路点列表标题栏
         React.createElement('div', { key: 'header', className: 'flex justify-between items-center py-4 border-b border-gray-800' }, [
             React.createElement('h3', { className: 'text-gray-400 font-bold uppercase tracking-widest text-xs' }, '航路点列表 (WAYPOINTS)'),
             React.createElement('button', {
@@ -58,7 +58,7 @@ const RouteEditor = ({ routeId, onBack }) => {
             ])
         ]),
 
-        // Add/Edit Waypoint Modal
+        // 添加/编辑航路点弹窗
         (isAddingWaypoint || editingWaypointId) && React.createElement(WaypointEditor, {
             key: 'modal',
             waypoint: editingWaypointId ? route.waypoints.find(wp => wp.id === editingWaypointId) : null,
@@ -69,7 +69,7 @@ const RouteEditor = ({ routeId, onBack }) => {
             }
         }),
 
-        // Waypoints List
+        // 航路点列表
         React.createElement('div', { key: 'list', className: 'flex-grow space-y-3 pb-8' }, 
             route.waypoints.length === 0 
                 ? React.createElement('div', { className: 'text-center py-20 bg-gray-800/20 rounded-2xl border-2 border-dashed border-gray-800' }, [
@@ -84,7 +84,7 @@ const RouteEditor = ({ routeId, onBack }) => {
                     key: wp.id,
                     className: 'p-4 rounded-xl bg-gray-800 border border-gray-700 flex justify-between items-center group hover:border-cyan-500/50 transition-all'
                 }, [
-                    // Index and Name
+                    // 序号和名称
                     React.createElement('div', { key: 'info', className: 'flex items-center gap-4' }, [
                         React.createElement('span', { className: 'text-gray-600 font-mono font-bold text-sm w-6' }, (i + 1).toString().padStart(2, '0')),
                         React.createElement('div', { className: 'flex flex-col' }, [
@@ -98,9 +98,9 @@ const RouteEditor = ({ routeId, onBack }) => {
                         ])
                     ]),
 
-                    // Actions
+                    // 操作按钮
                     React.createElement('div', { key: 'actions', className: 'flex gap-2' }, [
-                        // Move Buttons
+                        // 移动按钮（上移/下移）
                         React.createElement('div', { className: 'flex flex-col mr-2' }, [
                             React.createElement('button', {
                                 onClick: () => moveWaypoint(i, -1),

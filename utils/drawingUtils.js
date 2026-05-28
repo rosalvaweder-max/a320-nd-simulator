@@ -2,7 +2,7 @@ import { COLORS } from '../constants.js';
 
 export const toRad = (deg) => (deg * Math.PI) / 180;
 
-// --- AIRCRAFT SYMBOL (The Yellow "Shi" 士) ---
+// --- 飞机符号（黄色"士"字形） ---
 export const drawAircraftSymbol = (ctx, centerX, centerY, scale = 1) => {
   ctx.save();
   ctx.translate(centerX, centerY);
@@ -48,7 +48,7 @@ export const drawAircraftSymbol = (ctx, centerX, centerY, scale = 1) => {
   ctx.restore();
 };
 
-// --- COMPASS ROSE ---
+// --- 罗盘玫瑰 ---
 export const drawCompassRose = (ctx, radius, heading, mode) => {
   ctx.save();
   ctx.strokeStyle = COLORS.COMPASS_WHITE;
@@ -74,7 +74,7 @@ export const drawCompassRose = (ctx, radius, heading, mode) => {
       ctx.stroke();
   }
 
-  // Draw white solid triangles every 45° starting from 30°
+  // 从 30° 开始每 45° 绘制白色实心三角形
   const triangleStep = 45;
   const triangleStart = 30;
   const triangleSize = 10;
@@ -114,7 +114,7 @@ export const drawCompassRose = (ctx, radius, heading, mode) => {
     ctx.fill();
   }
 
-  // Draw ticks on the OUTSIDE of the compass ring
+  // 在罗盘环外侧绘制刻度线
   for (let i = 0; i < 360; i += step) {
     
     if (mode === 'ARC') {
@@ -133,7 +133,7 @@ export const drawCompassRose = (ctx, radius, heading, mode) => {
     ctx.strokeStyle = COLORS.COMPASS_GREY;
     if (isLabel) ctx.strokeStyle = COLORS.COMPASS_WHITE;
 
-    // Always draw ticks outside the compass ring
+    // 始终在罗盘环外侧绘制刻度
     const innerR = radius;
     const outerR = radius + len;
 
@@ -148,7 +148,7 @@ export const drawCompassRose = (ctx, radius, heading, mode) => {
     ctx.stroke();
 
     if (isLabel) {
-      // Labels outside the compass ring
+      // 罗盘环外侧的标签
       const labelOffset = Math.max(16, radius * 0.08);
       const labelR = radius + labelOffset;
       const tx = Math.cos(angleRad) * labelR;
@@ -166,7 +166,7 @@ export const drawCompassRose = (ctx, radius, heading, mode) => {
   ctx.restore();
 };
 
-// --- DATA BLOCKS ---
+// --- 数据块 ---
 
 export const drawGS_TAS = (ctx, gs, tas) => {
     ctx.font = "bold 18px Inconsolata";
@@ -227,7 +227,7 @@ export const drawWaypointInfo = (ctx, wptName, track, dist, time, width) => {
     ctx.fillText(time, rx, 105);
 };
 
-// --- ILS / VOR INTERFACES ---
+// --- ILS / VOR 界面 ---
 
 export const drawILSInterface = (ctx, width, height, heading, course, locDeviation = 0, gsDeviation = 0, radius = 140, nextWaypoint = null, range = 10, pxPerNM = 27) => {
     const cx = width / 2;
@@ -261,7 +261,7 @@ export const drawILSInterface = (ctx, width, height, heading, course, locDeviati
     const displayName = nextWaypoint ? nextWaypoint.name : "IYRA";
     ctx.fillText(displayName, rx, topY + 55);
 
-    // ========== GS (Vertical) Scale on Right Side ==========
+    // ========== 右侧下滑道（GS）垂直刻度 ==========
     const gsX = width - 20;
     
     ctx.strokeStyle = COLORS.TEXT_AMBER;
@@ -272,7 +272,7 @@ export const drawILSInterface = (ctx, width, height, heading, course, locDeviati
     ctx.lineTo(gsX + baselineLength/2, cy);
     ctx.stroke();
     
-    // GS dots - hollow (outlined) instead of filled
+    // GS 圆点 - 空心（轮廓）而非实心
     ctx.strokeStyle = COLORS.COMPASS_WHITE;
     ctx.lineWidth = 1.5;
     const gsDotSpacing = 35;
@@ -282,7 +282,7 @@ export const drawILSInterface = (ctx, width, height, heading, course, locDeviati
         ctx.stroke();
     });
 
-    // GS deviation diamond indicator
+    // GS 偏差菱形指示器
     const gsDegreesPerDot = 0.4;
     let gsDeviationInDots;
     if (gsDeviation === 0) {
@@ -306,13 +306,13 @@ export const drawILSInterface = (ctx, width, height, heading, course, locDeviati
     const halfRangeRadius = range * 0.5 * pxPerNM;
     drawCourseDagger(ctx, cx, cy, heading, course, true, locDeviation, true, radius, null, halfRangeRadius);
     
-    // ========== LOC (Horizontal) Scale on 0.5 Range Ring Diameter ==========
-    // In real A320 ND ILS mode, the LOC deviation scale is shown as
-    // hollow circles distributed along the horizontal diameter of the 0.5 range ring.
-    const locDotSpacing = halfRangeRadius / 2;  // evenly spaced: 0, ±half/2, ±half
-    const locDotRadius = 4;  // slightly larger hollow circles
+    // ========== 航向道（LOC）水平刻度（位于 0.5 量程环直径上） ==========
+    // 在真实 A320 ND ILS 模式中，LOC 偏差刻度显示为
+    // 沿 0.5 量程环水平直径分布的空心圆
+    const locDotSpacing = halfRangeRadius / 2;  // 均匀分布：0、±half/2、±half
+    const locDotRadius = 4;  // 稍大的空心圆
     
-    // Draw center tick (vertical line at center)
+    // 绘制中心刻度线（中心的垂直线）
     ctx.strokeStyle = COLORS.TEXT_AMBER;
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -320,7 +320,7 @@ export const drawILSInterface = (ctx, width, height, heading, course, locDeviati
     ctx.lineTo(cx, cy + 10);
     ctx.stroke();
     
-    // Draw hollow circles at evenly spaced positions on the horizontal diameter
+    // 在水平直径上绘制均匀分布的空心圆
     ctx.strokeStyle = COLORS.COMPASS_WHITE;
     ctx.lineWidth = 1.5;
     [-2, -1, 1, 2].forEach(i => {
@@ -446,9 +446,9 @@ const drawCourseDagger = (ctx, cx, cy, heading, course, isILS, deviation = 0, is
     ctx.lineTo(10, len);
     ctx.stroke();
 
-    // Deviation scale dots - hollow circles inside max deviation range
-    // Leave ~1.5 circle-widths gap from max deviation (circle radius=4, gap≈12px)
-    // ILS uses its own LOC scale in drawILSInterface, so skip here
+    // 偏差刻度圆点 - 在最大偏差范围内的空心圆
+    // 与最大偏差位置保留约 1.5 个圆宽度的间距（圆半径=4，间距≈12px）
+    // ILS 在 drawILSInterface 中使用自己的 LOC 刻度，因此此处跳过
     const dotRadius = 4;
     const dotGap = dotRadius * 3;  // ~1.5 circle-widths gap from max
     const dotMaxPx = maxDeviationPx - dotGap;  // dots stay inside this range
@@ -563,18 +563,18 @@ export const drawBearingPointer = (ctx, cx, cy, heading, bearing, radius, innerR
     ctx.fillStyle = COLORS.COMPASS_WHITE;
     ctx.lineWidth = 2;
     
-    // Bearing pointer: line from one side of compass to the other,
-    // only drawn between the inner range ring and the compass edge.
-    // Inner circle area (inside innerRadius) is not drawn.
+    // 方位指针：从罗盘一侧到另一侧的线条，
+    // 仅在内量程环和罗盘边缘之间绘制。
+    // 内圆区域（innerRadius 内部）不绘制。
     const triSize = 8; // size of hollow triangle
     
-    // Upper segment midpoint
+    // 上段中点
     const upperMid = -(innerRadius + radius) / 2;
     const upperTriTip = upperMid - triSize;    // triangle tip (closer to compass edge)
     const upperTriBase = upperMid + triSize;   // triangle base (closer to center)
     
-    // Draw upper segment: from inner radius to triangle base, then from triangle tip to compass edge
-    // (skip the part inside the triangle)
+    // 绘制上段：从内半径到三角形底部，然后从三角形尖端到罗盘边缘
+    // （跳过三角形内部的部分）
     ctx.beginPath();
     ctx.moveTo(0, -innerRadius);
     ctx.lineTo(0, upperTriBase);
@@ -584,13 +584,13 @@ export const drawBearingPointer = (ctx, cx, cy, heading, bearing, radius, innerR
     ctx.lineTo(0, -radius);
     ctx.stroke();
     
-    // Lower segment midpoint
+    // 下段中点
     const lowerMid = (innerRadius + radius) / 2;
     const lowerTriTip = lowerMid - triSize;    // triangle tip (closer to compass edge)
     const lowerTriBase = lowerMid + triSize;   // triangle base (closer to center)
     
-    // Draw lower segment: from inner radius to triangle base, then from triangle tip to compass edge
-    // (skip the part inside the triangle)
+    // 绘制下段：从内半径到三角形底部，然后从三角形尖端到罗盘边缘
+    // （跳过三角形内部的部分）
     ctx.beginPath();
     ctx.moveTo(0, innerRadius);
     ctx.lineTo(0, lowerTriBase);
@@ -600,7 +600,7 @@ export const drawBearingPointer = (ctx, cx, cy, heading, bearing, radius, innerR
     ctx.lineTo(0, radius);
     ctx.stroke();
     
-    // Complete triangle at upper segment (3 sides: tip to left, left to right, right to tip)
+    // 在上段完成三角形（3 边：尖端到左、左到右、右到尖端）
     ctx.beginPath();
     ctx.moveTo(0, upperTriTip);                // tip pointing up (toward VOR)
     ctx.lineTo(-triSize, upperTriBase);        // bottom-left
@@ -608,7 +608,7 @@ export const drawBearingPointer = (ctx, cx, cy, heading, bearing, radius, innerR
     ctx.closePath();                           // back to tip
     ctx.stroke();
     
-    // Complete triangle at lower segment (3 sides, pointing same direction - up/toward VOR)
+    // 在下段完成三角形（3 边，指向相同方向 - 向上/朝向 VOR）
     ctx.beginPath();
     ctx.moveTo(0, lowerTriTip);                // tip pointing up (toward VOR)
     ctx.lineTo(-triSize, lowerTriBase);        // bottom-left
@@ -634,7 +634,7 @@ export const drawNavaidInfo = (ctx, corner, name, freq, dist, height, width) => 
     ctx.fillStyle = COLORS.TEXT_MAGENTA;
     ctx.fillText(`${name}  ${freq}`, x, y - 55);
     
-    // Third line: distance info - number in green, "NM" in blue
+    // 第三行：距离信息 - 数字为绿色，"NM" 为蓝色
     ctx.font = "bold 16px Inconsolata";
     ctx.fillStyle = COLORS.TRACK_GREEN;
     const distStr = `${dist}`;
@@ -651,7 +651,7 @@ export const drawNavaidInfo = (ctx, corner, name, freq, dist, height, width) => 
     ctx.textAlign = align;
 };
 
-// --- SYMBOLS ---
+// --- 符号 ---
 
 export const drawNavaid = (ctx, x, y, type, color) => {
   ctx.save();
@@ -767,7 +767,7 @@ export const drawTCASTarget = (ctx, x, y, target, mapRotation) => {
     else ctx.stroke();
   }
 
-  ctx.rotate(-mapRotation); 
+  ctx.rotate(-mapRotation); // 反向旋转以抵消地图旋转
   
   if (target.threatLevel === 'RA') ctx.fillStyle = COLORS.TEXT_RED;
   else if (target.threatLevel === 'TA') ctx.fillStyle = COLORS.TEXT_AMBER;
@@ -812,9 +812,10 @@ export const drawFailureFlags = (ctx, width, height) => {
 
 export const drawWeatherRadar = (ctx, range, pxPerNM) => {
     ctx.save();
+    // 模拟气象回波数据：半径、角度、距离、颜色
     const blobs = [
-        { r: 15, a: -30, d: 20, c: COLORS.EGPWS_LOW }, 
-        { r: 10, a: 10, d: 30, c: COLORS.EGPWS_MED }, 
+        { r: 15, a: -30, d: 20, c: COLORS.EGPWS_LOW },
+        { r: 10, a: 10, d: 30, c: COLORS.EGPWS_MED },
         { r: 5, a: 15, d: 32, c: COLORS.EGPWS_HIGH },
     ];
     
@@ -831,7 +832,7 @@ export const drawWeatherRadar = (ctx, range, pxPerNM) => {
 };
 
 export const drawEGPWSTerrain = (ctx, acX, acY, range, pxPerNM) => {
-    const gridSize = 5; 
+    const gridSize = 5; // 网格大小（海里）
     const minX = Math.floor((acX - range) / gridSize);
     const maxX = Math.ceil((acX + range) / gridSize);
     const minY = Math.floor((acY - range) / gridSize);
@@ -854,7 +855,7 @@ export const drawEGPWSTerrain = (ctx, acX, acY, range, pxPerNM) => {
                 const worldY = gy * gridSize;
                 
                 const sx = (worldX - acX) * pxPerNM;
-                const sy = -(worldY - acY) * pxPerNM; 
+                const sy = -(worldY - acY) * pxPerNM; // Y 轴翻转（屏幕坐标系）
                 const size = gridSize * pxPerNM;
                 
                 ctx.fillStyle = color;

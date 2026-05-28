@@ -1,50 +1,50 @@
 /**
- * Display Effects System for A320 ND Simulator
- * CRT, LCD, and other display technology simulations for authentic cockpit feel
+ * 显示效果系统 - A320 ND 模拟器
+ * CRT、LCD 及其他显示技术模拟，营造真实驾驶舱体验
  */
 
 import { COLORS } from '../constants.js';
 
 /**
- * Display Effect Types
+ * 显示效果类型
  */
 export const DISPLAY_EFFECTS = {
     NONE: 'NONE',
-    CRT: 'CRT',           // Cathode Ray Tube (older aircraft)
-    LCD: 'LCD',           // Liquid Crystal Display (modern aircraft)
-    OLED: 'OLED',         // Organic LED (future/experimental)
-    MONOCHROME: 'MONOCHROME', // Monochrome display
-    NIGHT_VISION: 'NIGHT_VISION' // Night vision compatible
+    CRT: 'CRT',           // 阴极射线管（老式飞机）
+    LCD: 'LCD',           // 液晶显示器（现代飞机）
+    OLED: 'OLED',         // 有机发光二极管（未来/实验性）
+    MONOCHROME: 'MONOCHROME', // 单色显示
+    NIGHT_VISION: 'NIGHT_VISION' // 夜视兼容
 };
 
 /**
- * Display Condition Types
+ * 显示环境条件类型
  */
 export const DISPLAY_CONDITIONS = {
     NORMAL: 'NORMAL',
-    SUNLIGHT_WASHOUT: 'SUNLIGHT_WASHOUT',
-    DIM_NIGHT: 'DIM_NIGHT',
-    RAIN_EFFECT: 'RAIN_EFFECT',
-    DIRTY_SCREEN: 'DIRTY_SCREEN',
-    AGED_DISPLAY: 'AGED_DISPLAY'
+    SUNLIGHT_WASHOUT: 'SUNLIGHT_WASHOUT', // 阳光冲刷
+    DIM_NIGHT: 'DIM_NIGHT',               // 夜间调暗
+    RAIN_EFFECT: 'RAIN_EFFECT',           // 雨水效果
+    DIRTY_SCREEN: 'DIRTY_SCREEN',         // 屏幕脏污
+    AGED_DISPLAY: 'AGED_DISPLAY'          // 老化显示
 };
 
 /**
- * CRT Display Effect Simulator
+ * CRT 显示效果模拟器
  */
 class CRTDisplayEffect {
     constructor() {
-        this.intensity = 0.7;
-        this.scanlineSpacing = 2;
-        this.phosphorPersistence = 0.3;
-        this.bloomEffect = 0.2;
-        this.convergenceError = 0.05;
+        this.intensity = 0.7;           // 效果强度
+        this.scanlineSpacing = 2;       // 扫描线间距（像素）
+        this.phosphorPersistence = 0.3; // 荧光余辉
+        this.bloomEffect = 0.2;         // 辉光效果
+        this.convergenceError = 0.05;   // 汇聚误差
         this.lastUpdate = Date.now();
-        this.time = 0;
+        this.time = 0;                  // 累计时间
     }
     
     /**
-     * Apply CRT effect to canvas context
+     * 将 CRT 效果应用到 Canvas 上下文
      */
     apply(context, width, height) {
         const now = Date.now();
@@ -52,34 +52,34 @@ class CRTDisplayEffect {
         this.time += deltaTime;
         this.lastUpdate = now;
         
-        // Save context state
+        // 保存上下文状态
         context.save();
         
-        // Create off-screen canvas for effect
+        // 创建离屏 Canvas 用于效果渲染
         const effectCanvas = document.createElement('canvas');
         effectCanvas.width = width;
         effectCanvas.height = height;
         const effectCtx = effectCanvas.getContext('2d');
         
-        // 1. Phosphor glow effect
+        // 1. 荧光余辉效果
         this.applyPhosphorGlow(effectCtx, width, height);
         
-        // 2. Scan lines
+        // 2. 扫描线
         this.applyScanLines(effectCtx, width, height);
         
-        // 3. Convergence error (RGB misalignment)
+        // 3. 汇聚误差（RGB 未对齐）
         this.applyConvergenceError(effectCtx, width, height);
         
-        // 4. Bloom effect for bright areas
+        // 4. 明亮区域的辉光效果
         this.applyBloomEffect(effectCtx, width, height);
         
-        // 5. Screen curvature (simulated with vignette)
+        // 5. 屏幕曲率（用暗角模拟）
         this.applyScreenCurvature(effectCtx, width, height);
         
-        // 6. Flicker and noise
+        // 6. 闪烁和噪点
         this.applyFlickerNoise(effectCtx, width, height);
         
-        // Composite effects onto original context
+        // 将效果合成到原始上下文
         context.globalCompositeOperation = 'overlay';
         context.drawImage(effectCanvas, 0, 0);
         
@@ -87,7 +87,7 @@ class CRTDisplayEffect {
     }
     
     /**
-     * Phosphor glow (afterglow) effect
+     * 荧光余辉效果
      */
     applyPhosphorGlow(ctx, width, height) {
         const gradient = ctx.createRadialGradient(
@@ -104,7 +104,7 @@ class CRTDisplayEffect {
     }
     
     /**
-     * CRT scan lines
+     * CRT 扫描线
      */
     applyScanLines(ctx, width, height) {
         ctx.strokeStyle = `rgba(0, 0, 0, ${0.1 * this.intensity})`;
@@ -117,7 +117,7 @@ class CRTDisplayEffect {
             ctx.stroke();
         }
         
-        // Horizontal retrace lines (darker)
+        // 水平回扫线（较暗）
         const retraceY = (this.time * 60) % height;
         ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
         ctx.beginPath();
@@ -127,12 +127,12 @@ class CRTDisplayEffect {
     }
     
     /**
-     * CRT convergence error (RGB misalignment)
+     * CRT 汇聚误差（RGB 未对齐）
      */
     applyConvergenceError(ctx, width, height) {
         const offset = this.convergenceError * 2;
         
-        // Red channel offset
+        // 红色通道偏移
         ctx.save();
         ctx.globalCompositeOperation = 'screen';
         ctx.fillStyle = `rgba(255, 0, 0, ${0.1 * this.intensity})`;
@@ -140,7 +140,7 @@ class CRTDisplayEffect {
         ctx.fillRect(0, 0, width, height);
         ctx.restore();
         
-        // Blue channel offset
+        // 蓝色通道偏移
         ctx.save();
         ctx.globalCompositeOperation = 'screen';
         ctx.fillStyle = `rgba(0, 0, 255, ${0.1 * this.intensity})`;
@@ -150,16 +150,16 @@ class CRTDisplayEffect {
     }
     
     /**
-     * Bloom effect for bright areas
+     * 明亮区域的辉光效果
      */
     applyBloomEffect(ctx, width, height) {
-        // Create bloom layer (simulated with blur)
+        // 创建辉光层（用模糊模拟）
         ctx.save();
         ctx.filter = `blur(${this.bloomEffect * 10}px)`;
         ctx.globalAlpha = 0.3 * this.bloomEffect;
         ctx.globalCompositeOperation = 'screen';
         
-        // Draw bright areas (simulated)
+        // 绘制明亮区域（模拟）
         const gradient = ctx.createRadialGradient(
             width / 2, height / 2, 0,
             width / 2, height / 2, width / 3
@@ -173,7 +173,7 @@ class CRTDisplayEffect {
     }
     
     /**
-     * Simulated screen curvature (vignette)
+     * 模拟屏幕曲率（暗角效果）
      */
     applyScreenCurvature(ctx, width, height) {
         const gradient = ctx.createRadialGradient(
@@ -189,7 +189,7 @@ class CRTDisplayEffect {
     }
     
     /**
-     * CRT flicker and noise
+     * CRT 闪烁和噪点
      */
     applyFlickerNoise(ctx, width, height) {
         const flicker = 0.95 + Math.sin(this.time * 30) * 0.05;
@@ -197,7 +197,7 @@ class CRTDisplayEffect {
         ctx.fillStyle = 'rgba(0, 0, 0, 1)';
         ctx.fillRect(0, 0, width, height);
         
-        // Random noise
+        // 随机噪点
         ctx.globalAlpha = 0.02;
         ctx.fillStyle = 'rgba(255, 255, 255, 1)';
         
@@ -210,7 +210,7 @@ class CRTDisplayEffect {
     }
     
     /**
-     * Set effect intensity (0-1)
+     * 设置效果强度（0-1）
      */
     setIntensity(intensity) {
         this.intensity = Math.max(0, Math.min(1, intensity));
@@ -218,44 +218,44 @@ class CRTDisplayEffect {
 }
 
 /**
- * LCD Display Effect Simulator
+ * LCD 显示效果模拟器
  */
 class LCDDisplayEffect {
     constructor() {
-        this.pixelGridIntensity = 0.3;
-        this.backlightBleed = 0.1;
-        this.responseTime = 0.2;
-        this.viewingAngle = 0.5;
-        this.colorTemperature = 6500; // Kelvin
+        this.pixelGridIntensity = 0.3;  // 像素网格强度
+        this.backlightBleed = 0.1;      // 背光漏光
+        this.responseTime = 0.2;        // 响应时间
+        this.viewingAngle = 0.5;        // 视角
+        this.colorTemperature = 6500;   // 色温（开尔文）
         this.lastUpdate = Date.now();
     }
     
     /**
-     * Apply LCD effect to canvas context
+     * 将 LCD 效果应用到 Canvas 上下文
      */
     apply(context, width, height) {
         context.save();
         
-        // 1. Pixel grid effect
+        // 1. 像素网格效果
         this.applyPixelGrid(context, width, height);
         
-        // 2. Backlight bleed
+        // 2. 背光漏光
         this.applyBacklightBleed(context, width, height);
         
-        // 3. Color temperature adjustment
+        // 3. 色温调整
         this.applyColorTemperature(context, width, height);
         
-        // 4. Viewing angle effect
+        // 4. 视角效果
         this.applyViewingAngle(context, width, height);
         
-        // 5. Response time simulation (motion blur)
+        // 5. 响应时间模拟（运动模糊）
         this.applyResponseTime(context, width, height);
         
         context.restore();
     }
     
     /**
-     * LCD pixel grid effect
+     * LCD 像素网格效果
      */
     applyPixelGrid(ctx, width, height) {
         const pixelSize = 2;
@@ -264,7 +264,7 @@ class LCDDisplayEffect {
         ctx.strokeStyle = `rgba(100, 100, 100, ${gridAlpha})`;
         ctx.lineWidth = 0.5;
         
-        // Vertical grid lines
+        // 垂直网格线
         for (let x = 0; x < width; x += pixelSize) {
             ctx.beginPath();
             ctx.moveTo(x, 0);
@@ -272,7 +272,7 @@ class LCDDisplayEffect {
             ctx.stroke();
         }
         
-        // Horizontal grid lines
+        // 水平网格线
         for (let y = 0; y < height; y += pixelSize) {
             ctx.beginPath();
             ctx.moveTo(0, y);
@@ -280,18 +280,18 @@ class LCDDisplayEffect {
             ctx.stroke();
         }
         
-        // Subpixel structure (RGB stripes)
+        // 子像素结构（RGB 条纹）
         ctx.globalAlpha = 0.02 * this.pixelGridIntensity;
         for (let x = 0; x < width; x += pixelSize * 3) {
-            // Red subpixel
+            // 红色子像素
             ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
             ctx.fillRect(x, 0, pixelSize, height);
             
-            // Green subpixel
+            // 绿色子像素
             ctx.fillStyle = 'rgba(0, 255, 0, 0.1)';
             ctx.fillRect(x + pixelSize, 0, pixelSize, height);
             
-            // Blue subpixel
+            // 蓝色子像素
             ctx.fillStyle = 'rgba(0, 0, 255, 0.1)';
             ctx.fillRect(x + pixelSize * 2, 0, pixelSize, height);
         }
@@ -300,13 +300,13 @@ class LCDDisplayEffect {
     }
     
     /**
-     * LCD backlight bleed (edge glow)
+     * LCD 背光漏光（边缘发光）
      */
     applyBacklightBleed(ctx, width, height) {
         const bleedSize = 20;
         const bleedAlpha = 0.3 * this.backlightBleed;
         
-        // Top edge
+        // 上边缘
         const topGradient = ctx.createLinearGradient(0, 0, 0, bleedSize);
         topGradient.addColorStop(0, `rgba(255, 255, 255, ${bleedAlpha})`);
         topGradient.addColorStop(1, 'transparent');
@@ -314,7 +314,7 @@ class LCDDisplayEffect {
         ctx.fillStyle = topGradient;
         ctx.fillRect(0, 0, width, bleedSize);
         
-        // Bottom edge
+        // 下边缘
         const bottomGradient = ctx.createLinearGradient(0, height - bleedSize, 0, height);
         bottomGradient.addColorStop(0, 'transparent');
         bottomGradient.addColorStop(1, `rgba(255, 255, 255, ${bleedAlpha})`);
@@ -322,7 +322,7 @@ class LCDDisplayEffect {
         ctx.fillStyle = bottomGradient;
         ctx.fillRect(0, height - bleedSize, width, bleedSize);
         
-        // Left edge
+        // 左边缘
         const leftGradient = ctx.createLinearGradient(0, 0, bleedSize, 0);
         leftGradient.addColorStop(0, `rgba(255, 255, 255, ${bleedAlpha})`);
         leftGradient.addColorStop(1, 'transparent');
@@ -330,7 +330,7 @@ class LCDDisplayEffect {
         ctx.fillStyle = leftGradient;
         ctx.fillRect(0, 0, bleedSize, height);
         
-        // Right edge
+        // 右边缘
         const rightGradient = ctx.createLinearGradient(width - bleedSize, 0, width, 0);
         rightGradient.addColorStop(0, 'transparent');
         rightGradient.addColorStop(1, `rgba(255, 255, 255, ${bleedAlpha})`);
@@ -340,14 +340,14 @@ class LCDDisplayEffect {
     }
     
     /**
-     * Color temperature adjustment
+     * 色温调整
      */
     applyColorTemperature(ctx, width, height) {
-        // Convert Kelvin to RGB tint
+        // 将开尔文色温转换为 RGB 色调
         let r, g, b;
         
         if (this.colorTemperature <= 6600) {
-            // Warm to neutral
+            // 暖色到中性色
             const t = this.colorTemperature / 100;
             r = 255;
             g = t < 66 ? 99.4708025861 * Math.log(t) - 161.1195681661 :
@@ -356,19 +356,19 @@ class LCDDisplayEffect {
                 t < 66 ? 138.5177312231 * Math.log(t - 10) - 305.0447927307 :
                         155.0;
         } else {
-            // Cool
+            // 冷色
             const t = this.colorTemperature / 100;
             r = 329.698727446 * Math.pow((t - 60), -0.1332047592);
             g = 288.1221695283 * Math.pow((t - 60), -0.0755148492);
             b = 255;
         }
         
-        // Clamp and normalize
+        // 钳位并归一化
         r = Math.min(255, Math.max(0, r)) / 255;
         g = Math.min(255, Math.max(0, g)) / 255;
         b = Math.min(255, Math.max(0, b)) / 255;
         
-        // Apply as overlay
+        // 作为叠加层应用
         ctx.globalCompositeOperation = 'overlay';
         ctx.globalAlpha = 0.1;
         ctx.fillStyle = `rgb(${r * 255}, ${g * 255}, ${b * 255})`;
@@ -378,7 +378,7 @@ class LCDDisplayEffect {
     }
     
     /**
-     * Viewing angle effect (color shift at edges)
+     * 视角效果（边缘色偏）
      */
     applyViewingAngle(ctx, width, height) {
         if (this.viewingAngle <= 0) return;
@@ -394,15 +394,15 @@ class LCDDisplayEffect {
             for (let x = 0; x < width; x++) {
                 const idx = (y * width + x) * 4;
                 
-                // Calculate distance from center
+                // 计算距中心的距离
                 const dx = x - centerX;
                 const dy = y - centerY;
                 const distance = Math.sqrt(dx * dx + dy * dy) / maxDistance;
                 
-                // Apply viewing angle effect (color shift at edges)
+                // 应用视角效果（边缘色偏）
                 const angleEffect = distance * this.viewingAngle;
                 
-                // Shift colors based on position
+                // 根据位置偏移颜色
                 const angle = Math.atan2(dy, dx);
                 const redShift = Math.cos(angle) * angleEffect * 50;
                 const blueShift = Math.sin(angle) * angleEffect * 50;
@@ -416,12 +416,12 @@ class LCDDisplayEffect {
     }
     
     /**
-     * LCD response time simulation (motion blur)
+     * LCD 响应时间模拟（运动模糊）
      */
     applyResponseTime(ctx, width, height) {
         if (this.responseTime <= 0) return;
         
-        // Create motion blur effect
+        // 创建运动模糊效果
         ctx.save();
         ctx.filter = `blur(${this.responseTime}px)`;
         ctx.globalAlpha = 0.3;
@@ -431,7 +431,7 @@ class LCDDisplayEffect {
     }
     
     /**
-     * Set color temperature in Kelvin
+     * 设置色温（开尔文）
      */
     setColorTemperature(kelvin) {
         this.colorTemperature = Math.max(1000, Math.min(10000, kelvin));
@@ -439,19 +439,19 @@ class LCDDisplayEffect {
 }
 
 /**
- * Environmental Condition Effects
+ * 环境条件效果
  */
 class EnvironmentalEffects {
     constructor() {
-        this.sunlightWashout = 0;
-        this.dimLevel = 0;
-        this.rainEffect = 0;
-        this.dirtLevel = 0;
-        this.ageEffect = 0;
+        this.sunlightWashout = 0;  // 阳光冲刷程度
+        this.dimLevel = 0;         // 调暗程度
+        this.rainEffect = 0;       // 雨水效果程度
+        this.dirtLevel = 0;        // 脏污程度
+        this.ageEffect = 0;        // 老化程度
     }
     
     /**
-     * Apply environmental effects
+     * 应用环境效果
      */
     apply(context, width, height, condition) {
         context.save();
@@ -479,7 +479,7 @@ class EnvironmentalEffects {
                 
             case DISPLAY_CONDITIONS.NORMAL:
             default:
-                // No additional effects
+                // 无额外效果
                 break;
         }
         
@@ -487,16 +487,16 @@ class EnvironmentalEffects {
     }
     
     /**
-     * Sunlight washout effect
+     * 阳光冲刷效果
      */
     applySunlightWashout(ctx, width, height) {
-        // Add overall brightness and reduce contrast
+        // 增加整体亮度并降低对比度
         ctx.globalCompositeOperation = 'screen';
         ctx.globalAlpha = 0.3 * this.sunlightWashout;
         ctx.fillStyle = 'rgba(255, 255, 255, 1)';
         ctx.fillRect(0, 0, width, height);
         
-        // Reduce contrast
+        // 降低对比度
         ctx.globalCompositeOperation = 'source-over';
         ctx.globalAlpha = 0.5 * this.sunlightWashout;
         ctx.fillStyle = 'rgba(128, 128, 128, 1)';
@@ -504,16 +504,16 @@ class EnvironmentalEffects {
     }
     
     /**
-     * Dim night mode effect
+     * 夜间调暗效果
      */
     applyDimNight(ctx, width, height) {
-        // Reduce brightness
+        // 降低亮度
         ctx.globalCompositeOperation = 'multiply';
         ctx.globalAlpha = this.dimLevel;
         ctx.fillStyle = 'rgba(0, 0, 0, 1)';
         ctx.fillRect(0, 0, width, height);
         
-        // Add red tint for night vision preservation
+        // 添加红色色调以保护夜视
         if (this.dimLevel > 0.5) {
             ctx.globalCompositeOperation = 'overlay';
             ctx.globalAlpha = 0.1;
@@ -523,12 +523,12 @@ class EnvironmentalEffects {
     }
     
     /**
-     * Rain on screen effect
+     * 屏幕雨水效果
      */
     applyRainEffect(ctx, width, height) {
         const time = Date.now() / 1000;
         
-        // Rain drops
+        // 雨滴
         ctx.strokeStyle = `rgba(150, 150, 255, ${0.5 * this.rainEffect})`;
         ctx.lineWidth = 1;
         
@@ -543,7 +543,7 @@ class EnvironmentalEffects {
             ctx.stroke();
         }
         
-        // Water streaks
+        // 水流痕迹
         ctx.strokeStyle = `rgba(100, 100, 200, ${0.3 * this.rainEffect})`;
         ctx.lineWidth = 2;
         
@@ -561,13 +561,13 @@ class EnvironmentalEffects {
     }
     
     /**
-     * Dirty screen effect
+     * 屏幕脏污效果
      */
     applyDirtyScreen(ctx, width, height) {
-        // Dust and smudges
+        // 灰尘和污渍
         ctx.globalAlpha = 0.1 * this.dirtLevel;
         
-        // Random smudges
+        // 随机污渍
         for (let i = 0; i < 50 * this.dirtLevel; i++) {
             const x = Math.random() * width;
             const y = Math.random() * height;
@@ -581,7 +581,7 @@ class EnvironmentalEffects {
             ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
         }
         
-        // Fingerprints
+        // 指纹
         ctx.strokeStyle = `rgba(150, 150, 150, ${0.3 * this.dirtLevel})`;
         ctx.lineWidth = 3;
         ctx.lineCap = 'round';
@@ -593,7 +593,7 @@ class EnvironmentalEffects {
             ctx.beginPath();
             ctx.moveTo(startX, startY);
             
-            // Simulate fingerprint swirl
+            // 模拟指纹漩涡
             for (let j = 0; j < 5; j++) {
                 const angle = j * Math.PI / 2.5;
                 const radius = 15 + Math.random() * 10;
@@ -607,23 +607,23 @@ class EnvironmentalEffects {
     }
     
     /**
-     * Aged display effect
+     * 老化显示效果
      */
     applyAgedDisplay(ctx, width, height) {
-        // Color fading
+        // 颜色褪色
         ctx.globalCompositeOperation = 'overlay';
         ctx.globalAlpha = 0.2 * this.ageEffect;
         ctx.fillStyle = 'rgba(200, 180, 150, 1)'; // Yellowish tint
         ctx.fillRect(0, 0, width, height);
         
-        // Burn-in effect (simulated)
+        // 烧屏效果（模拟）
         const time = Date.now() / 10000;
         ctx.globalAlpha = 0.1 * this.ageEffect;
         
-        // Simulate persistent elements (compass, aircraft symbol)
+        // 模拟常驻元素（罗盘、飞机符号）
         ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
         
-        // Compass rose burn-in
+        // 罗盘玫瑰烧屏
         const cx = width / 2;
         const cy = height / 2;
         const radius = Math.min(width, height) * 0.4;
@@ -632,11 +632,11 @@ class EnvironmentalEffects {
         ctx.arc(cx, cy, radius, 0, Math.PI * 2);
         ctx.fill();
         
-        // Aircraft symbol burn-in
+        // 飞机符号烧屏
         ctx.fillStyle = 'rgba(255, 255, 0, 0.03)';
         ctx.fillRect(cx - 10, cy - 10, 20, 20);
         
-        // Dead pixels
+        // 坏点
         ctx.globalAlpha = 1;
         ctx.fillStyle = 'black';
         
@@ -648,7 +648,7 @@ class EnvironmentalEffects {
     }
     
     /**
-     * Set effect levels (0-1)
+     * 设置效果级别（0-1）
      */
     setEffectLevels(levels) {
         if (levels.sunlightWashout !== undefined) {
@@ -670,25 +670,25 @@ class EnvironmentalEffects {
 }
 
 /**
- * Main Display Effects Manager
+ * 主显示效果管理器
  */
 class DisplayEffectsManager {
     constructor() {
-        this.currentEffect = DISPLAY_EFFECTS.LCD;
-        this.currentCondition = DISPLAY_CONDITIONS.NORMAL;
-        this.effectIntensity = 0.7;
+        this.currentEffect = DISPLAY_EFFECTS.LCD;       // 当前效果类型
+        this.currentCondition = DISPLAY_CONDITIONS.NORMAL; // 当前环境条件
+        this.effectIntensity = 0.7;                      // 效果强度
         
         this.crtEffect = new CRTDisplayEffect();
         this.lcdEffect = new LCDDisplayEffect();
         this.environmentalEffects = new EnvironmentalEffects();
         
-        this.enabled = true;
-        this.lastRenderTime = 0;
-        this.frameCount = 0;
+        this.enabled = true;        // 是否启用效果
+        this.lastRenderTime = 0;    // 上次渲染时间
+        this.frameCount = 0;        // 帧计数
     }
     
     /**
-     * Apply display effects to canvas
+     * 将显示效果应用到 Canvas
      */
     applyEffects(context, width, height) {
         if (!this.enabled) return;
@@ -696,7 +696,7 @@ class DisplayEffectsManager {
         this.frameCount++;
         const now = Date.now();
         
-        // Apply primary display effect
+        // 应用主要显示效果
         switch (this.currentEffect) {
             case DISPLAY_EFFECTS.CRT:
                 this.crtEffect.setIntensity(this.effectIntensity);
@@ -708,7 +708,7 @@ class DisplayEffectsManager {
                 break;
                 
             case DISPLAY_EFFECTS.OLED:
-                // OLED similar to LCD but with perfect blacks
+                // OLED 类似 LCD，但具有完美黑色
                 this.lcdEffect.apply(context, width, height);
                 this.applyOLEDEffect(context, width, height);
                 break;
@@ -723,11 +723,11 @@ class DisplayEffectsManager {
                 
             case DISPLAY_EFFECTS.NONE:
             default:
-                // No effect
+                // 无效果
                 break;
         }
         
-        // Apply environmental conditions
+        // 应用环境条件
         this.environmentalEffects.apply(context, width, height, this.currentCondition);
         
         this.lastRenderTime = now - this.lastRenderTime;
@@ -735,15 +735,15 @@ class DisplayEffectsManager {
     }
     
     /**
-     * OLED specific effect (perfect blacks)
+     * OLED 特定效果（完美黑色）
      */
     applyOLEDEffect(ctx, width, height) {
-        // OLED has infinite contrast, simulate by deepening blacks
+        // OLED 具有无限对比度，通过加深黑色来模拟
         const imageData = ctx.getImageData(0, 0, width, height);
         const data = imageData.data;
         
         for (let i = 0; i < data.length; i += 4) {
-            // Deepen dark pixels
+            // 加深暗像素
             const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
             if (brightness < 50) {
                 const factor = brightness / 50;
@@ -757,7 +757,7 @@ class DisplayEffectsManager {
     }
     
     /**
-     * Monochrome display effect
+     * 单色显示效果
      */
     applyMonochromeEffect(ctx, width, height) {
         const imageData = ctx.getImageData(0, 0, width, height);
@@ -768,7 +768,7 @@ class DisplayEffectsManager {
             const g = data[i + 1];
             const b = data[i + 2];
             
-            // Convert to grayscale (luminance preserving)
+            // 转换为灰度（保持亮度）
             const gray = 0.299 * r + 0.587 * g + 0.114 * b;
             
             data[i] = gray;     // R
@@ -780,10 +780,10 @@ class DisplayEffectsManager {
     }
     
     /**
-     * Night vision effect (green phosphor)
+     * 夜视效果（绿色荧光）
      */
     applyNightVisionEffect(ctx, width, height) {
-        // Convert to green monochrome
+        // 转换为绿色单色
         const imageData = ctx.getImageData(0, 0, width, height);
         const data = imageData.data;
         
@@ -792,7 +792,7 @@ class DisplayEffectsManager {
             const g = data[i + 1];
             const b = data[i + 2];
             
-            // Night vision green phosphor
+            // 夜视绿色荧光
             const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
             const green = Math.min(255, luminance * 1.5);
             
@@ -803,7 +803,7 @@ class DisplayEffectsManager {
         
         ctx.putImageData(imageData, 0, 0);
         
-        // Add night vision grain
+        // 添加夜视颗粒噪点
         ctx.globalAlpha = 0.05;
         for (let i = 0; i < 1000; i++) {
             const x = Math.random() * width;
@@ -818,7 +818,7 @@ class DisplayEffectsManager {
     }
     
     /**
-     * Set display effect type
+     * 设置显示效果类型
      */
     setEffect(effectType) {
         if (Object.values(DISPLAY_EFFECTS).includes(effectType)) {
@@ -827,7 +827,7 @@ class DisplayEffectsManager {
     }
     
     /**
-     * Set environmental condition
+     * 设置环境条件
      */
     setCondition(condition) {
         if (Object.values(DISPLAY_CONDITIONS).includes(condition)) {
@@ -836,21 +836,21 @@ class DisplayEffectsManager {
     }
     
     /**
-     * Set effect intensity (0-1)
+     * 设置效果强度（0-1）
      */
     setIntensity(intensity) {
         this.effectIntensity = Math.max(0, Math.min(1, intensity));
     }
     
     /**
-     * Enable/disable effects
+     * 启用/禁用效果
      */
     setEnabled(enabled) {
         this.enabled = enabled;
     }
     
     /**
-     * Get effect statistics
+     * 获取效果统计信息
      */
     getStats() {
         return {
@@ -864,10 +864,10 @@ class DisplayEffectsManager {
     }
 }
 
-// Export singleton instance
+// 导出单例实例
 export const displayEffectsManager = new DisplayEffectsManager();
 
-// Export classes and constants for testing
+// 导出类和常量（用于测试）
 export {
     DisplayEffectsManager,
     CRTDisplayEffect,
@@ -876,7 +876,7 @@ export {
     // displayEffectsManager is already exported above as named export
 };
 
-// Default export for convenience
+// 默认导出（方便使用）
 export default {
     DisplayEffectsManager
     // displayEffectsManager is already exported as named export above

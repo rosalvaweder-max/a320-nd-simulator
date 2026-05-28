@@ -1,21 +1,21 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 
 /**
- * ContinuousKnob - A rotary knob for continuous values (frequency, course, etc.)
- * 
- * Real A320 style: physical rotary encoder with detents.
- * Supports mouse drag (vertical) and click-to-increment/decrement.
- * 
- * Props:
- *   value: number - Current value
- *   onChange: (newValue: number) => void - Called when value changes
- *   min: number - Minimum value
- *   max: number - Maximum value
- *   step: number - Step size per detent
- *   label: string - Label displayed below the knob
- *   displayValue: string - Formatted value to show (optional, defaults to value)
- *   size: number - Knob diameter in pixels (default: 64)
- *   color: string - Active color (default: '#22d3ee' cyan)
+ * ContinuousKnob - 连续值旋钮（频率、航道等）
+ *
+ * 真实 A320 风格：带定位感的物理旋转编码器
+ * 支持鼠标拖拽（垂直）和点击增减
+ *
+ * 属性：
+ *   value: number - 当前值
+ *   onChange: (newValue: number) => void - 值变化时回调
+ *   min: number - 最小值
+ *   max: number - 最大值
+ *   step: number - 每档步长
+ *   label: string - 旋钮下方显示的标签
+ *   displayValue: string - 格式化显示值（可选，默认为 value）
+ *   size: number - 旋钮直径（像素，默认 64）
+ *   color: string - 激活颜色（默认 '#22d3ee' 青色）
  */
 const ContinuousKnob = ({ 
     value, 
@@ -33,14 +33,14 @@ const ContinuousKnob = ({
     const [dragStartValue, setDragStartValue] = useState(0);
     const knobRef = useRef(null);
 
-    // Calculate rotation angle based on value range
-    // Knob rotates from -135° (min) to +135° (max) = 270° range
+    // 根据值范围计算旋转角度
+    // 旋钮从 -135°（最小值）旋转到 +135°（最大值）= 270° 范围
     const angleRange = 270;
     const valueRange = max - min;
     const valueRatio = valueRange > 0 ? (value - min) / valueRange : 0;
     const rotation = -135 + valueRatio * angleRange;
 
-    // Handle mouse down to start drag
+    // 鼠标按下开始拖拽
     const handleMouseDown = useCallback((e) => {
         e.preventDefault();
         setIsDragging(true);
@@ -48,31 +48,31 @@ const ContinuousKnob = ({
         setDragStartValue(value);
     }, [value]);
 
-    // Handle mouse move during drag
+    // 鼠标拖拽移动处理
     const handleMouseMove = useCallback((e) => {
         if (!isDragging) return;
         
-        const deltaY = dragStartY - e.clientY; // Negative = drag down = decrease
+        const deltaY = dragStartY - e.clientY; // 负值 = 向下拖拽 = 减小
         const deltaValue = deltaY * step; // Each pixel = one step
         
-        // Calculate new value with wrapping for 0-360 ranges
+        // 计算新值（0-360 范围支持环绕）
         let newValue = dragStartValue + deltaValue;
         
-        // Clamp to range
+        // 限制在范围内
         newValue = Math.max(min, Math.min(max, newValue));
         
-        // Round to nearest step
+        // 四舍五入到最近的步长
         newValue = Math.round(newValue / step) * step;
         
         onChange(newValue);
     }, [isDragging, dragStartY, dragStartValue, min, max, step, onChange]);
 
-    // Handle mouse up to end drag
+    // 鼠标松开结束拖拽
     const handleMouseUp = useCallback(() => {
         setIsDragging(false);
     }, []);
 
-    // Handle click on left half = decrement, right half = increment
+    // 点击旋钮：上半部分=增加，下半部分=减小
     const handleKnobClick = useCallback((e) => {
         if (isDragging) return;
         
@@ -82,26 +82,26 @@ const ContinuousKnob = ({
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;
         
-        // Determine if click is on left or right side
+        // 判断点击在左半还是右半
         const dx = x - centerX;
         const dy = y - centerY;
         
-        // Top half: increment, Bottom half: decrement
-        // (like a real rotary encoder - turn up = CW, turn down = CCW)
+        // 上半部分：增加，下半部分：减小
+        // （类似真实旋转编码器 - 向上转=顺时针，向下转=逆时针）
         if (dy < 0) {
-            // Top half - increment
+            // 上半部分 - 增加
             let newValue = Math.round((value + step) / step) * step;
-            if (newValue > max) newValue = min; // Wrap around
+            if (newValue > max) newValue = min; // 环绕
             onChange(newValue);
         } else {
-            // Bottom half - decrement
+            // 下半部分 - 减小
             let newValue = Math.round((value - step) / step) * step;
-            if (newValue < min) newValue = max; // Wrap around
+            if (newValue < min) newValue = max; // 环绕
             onChange(newValue);
         }
     }, [value, step, min, max, onChange, isDragging]);
 
-    // Add native wheel listener on the container (React onWheel is passive, preventDefault won't work)
+    // 在容器上添加原生滚轮监听（React onWheel 是被动的，preventDefault 无效）
     const containerRef = useRef(null);
     useEffect(() => {
         const el = containerRef.current;
@@ -122,7 +122,7 @@ const ContinuousKnob = ({
         return () => el.removeEventListener('wheel', handler);
     }, [value, step, min, max, onChange]);
 
-    // Add/remove global mouse listeners
+    // 添加/移除全局鼠标监听器
     useEffect(() => {
         if (isDragging) {
             window.addEventListener('mousemove', handleMouseMove);
@@ -142,25 +142,25 @@ const ContinuousKnob = ({
         className: 'flex flex-col items-center select-none',
         style: { position: 'relative' }
     }, [
-        // Knob container
+        // 旋钮容器
         React.createElement('div', {
             key: 'knob-container',
             className: 'relative',
             style: { width: size, height: size }
         }, [
-            // Outer bezel
+            // 外圈边框
             React.createElement('div', {
                 key: 'outer-bezel',
                 className: 'absolute inset-0 rounded-full border-2 border-gray-700 bg-[#dcdcdc] shadow-[1px_1px_3px_rgba(0,0,0,0.3),inset_0_0_8px_rgba(0,0,0,0.1)]'
             }),
             
-            // Tick marks around the knob
+            // 旋钮周围的刻度线
             React.createElement('svg', {
                 key: 'tick-marks',
                 className: 'absolute inset-0 w-full h-full',
                 viewBox: `0 0 ${size} ${size}`
             }, [
-                // Major ticks every 30° of knob rotation (every ~22.5° of value range)
+                // 每 30° 旋钮旋转一个主刻度（约每 22.5° 值范围）
                 Array.from({ length: 13 }, (_, i) => {
                     const tickAngle = (-135 + i * (270 / 12)) * Math.PI / 180;
                     const outerR = r - 4;
@@ -178,7 +178,7 @@ const ContinuousKnob = ({
                 })
             ]),
             
-            // Inner knob (rotating part)
+            // 内圈旋钮（旋转部分）
             React.createElement('div', {
                 key: 'inner-knob',
                 ref: knobRef,
@@ -199,7 +199,7 @@ const ContinuousKnob = ({
                     background: '#e8e8e8'
                 }
             }, [
-                // Pointer line (rotates with value)
+                // 指针线（随值旋转）
                 React.createElement('div', {
                     key: 'pointer',
                     className: 'absolute rounded-full',
@@ -214,7 +214,7 @@ const ContinuousKnob = ({
                         transition: isDragging ? 'none' : 'transform 0.1s ease'
                     }
                 }),
-                // Center dot
+                // 中心圆点
                 React.createElement('div', {
                     key: 'center-dot',
                     className: 'absolute rounded-full bg-gray-500',
@@ -227,14 +227,14 @@ const ContinuousKnob = ({
             ])
         ]),
         
-        // Value display
+        // 数值显示
         React.createElement('div', {
             key: 'value-display',
             className: 'font-mono text-xs font-bold text-black tracking-wider mt-1',
             style: { color: isDragging ? color : '#000' }
         }, String(display)),
         
-        // Label
+        // 标签
         label && React.createElement('div', {
             key: 'label',
             className: 'text-[8px] font-bold text-gray-700 mt-0.5'

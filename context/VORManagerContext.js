@@ -3,11 +3,11 @@ import React, { createContext, useContext, useState, useCallback, useMemo, useEf
 const STORAGE_KEY = 'a320-nd-vor-stations';
 const TUNING_STORAGE_KEY = 'a320-nd-vor-tuning';
 const STORAGE_VERSION_KEY = 'a320-nd-vor-version';
-const CURRENT_VERSION = 5; // Increment when DEFAULT_VOR_STATIONS change
+const CURRENT_VERSION = 5; // DEFAULT_VOR_STATIONS 变更时递增此版本号
 
-// Default VOR stations - positioned along the flight route corridor
-// Placed naturally along the route path (LFPG → EGLL → CDG → LAM → TODIL → KOK)
-// Each station is offset slightly from the route centerline, like real-world navaids
+// 默认 VOR 台站 - 沿飞行航路走廊布置
+// 自然地沿航路路径布置（LFPG → EGLL → CDG → LAM → TODIL → KOK）
+// 每个台站略微偏离航路中心线，模拟真实导航台布局
 const DEFAULT_VOR_STATIONS = [
     { id: 'vor-gow', name: 'GOW', frequency: '114.10', x: -110, y: 85, type: 'VOR', navaidType: 'VOR' },
     { id: 'vor-doo', name: 'DOO', frequency: '113.70', x: -135, y: 65, type: 'VOR', navaidType: 'VOR' },
@@ -21,7 +21,7 @@ const VORManagerContext = createContext(null);
 
 export const VORManagerProvider = ({ children }) => {
     const [vorStations, setVorStations] = useState(() => {
-        // Check version - if mismatch, reset to defaults (handles coordinate changes)
+        // 检查版本 - 如果不匹配则重置为默认值（处理坐标变更）
         const storedVersion = localStorage.getItem(STORAGE_VERSION_KEY);
         if (storedVersion !== String(CURRENT_VERSION)) {
             localStorage.removeItem(STORAGE_KEY);
@@ -39,7 +39,7 @@ export const VORManagerProvider = ({ children }) => {
         return DEFAULT_VOR_STATIONS.map(s => ({ ...s }));
     });
 
-    // Tuning state
+    // 调谐状态
     const [tuningState, setTuningState] = useState(() => {
         const stored = localStorage.getItem(TUNING_STORAGE_KEY);
         if (stored) {
@@ -50,7 +50,7 @@ export const VORManagerProvider = ({ children }) => {
             }
         }
         return {
-            mode: 'auto', // 'auto' or 'manual'
+            mode: 'auto', // 'auto'（自动）或 'manual'（手动）
             manualFrequency: '114.10',
             autoFrequency: '114.10',
             autoStationId: 'vor-gow',
@@ -58,7 +58,7 @@ export const VORManagerProvider = ({ children }) => {
         };
     });
 
-    // Persist to localStorage
+    // 持久化到 localStorage
     useEffect(() => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(vorStations));
     }, [vorStations]);
@@ -67,7 +67,7 @@ export const VORManagerProvider = ({ children }) => {
         localStorage.setItem(TUNING_STORAGE_KEY, JSON.stringify(tuningState));
     }, [tuningState]);
 
-    // Add a new VOR station
+    // 添加新的 VOR 台站
     const addVORStation = useCallback((station) => {
         setVorStations(prev => [...prev, {
             ...station,
@@ -77,24 +77,24 @@ export const VORManagerProvider = ({ children }) => {
         }]);
     }, []);
 
-    // Remove a VOR station
+    // 删除 VOR 台站
     const removeVORStation = useCallback((stationId) => {
         setVorStations(prev => prev.filter(s => s.id !== stationId));
     }, []);
 
-    // Update a VOR station
+    // 更新 VOR 台站
     const updateVORStation = useCallback((stationId, updates) => {
         setVorStations(prev => prev.map(s => 
             s.id === stationId ? { ...s, ...updates } : s
         ));
     }, []);
 
-    // Get all VOR stations
+    // 获取所有 VOR 台站
     const getAllVORStations = useCallback(() => {
         return vorStations;
     }, [vorStations]);
 
-    // Find nearest VOR station to aircraft position (auto-tuning)
+    // 查找离飞机最近的 VOR 台站（自动调谐）
     const findNearestVORStation = useCallback((aircraftX, aircraftY) => {
         if (!vorStations || vorStations.length === 0) return null;
         
@@ -114,27 +114,27 @@ export const VORManagerProvider = ({ children }) => {
         return nearest;
     }, [vorStations]);
 
-    // Find VOR station by frequency
+    // 按频率查找 VOR 台站
     const findVORByFrequency = useCallback((freq) => {
         return vorStations.find(s => s.frequency === freq) || null;
     }, [vorStations]);
 
-    // Find VOR station by ID
+    // 按 ID 查找 VOR 台站
     const findVORById = useCallback((id) => {
         return vorStations.find(s => s.id === id) || null;
     }, [vorStations]);
 
-    // Set tuning mode
+    // 设置调谐模式
     const setTuningMode = useCallback((mode) => {
         setTuningState(prev => ({ ...prev, mode }));
     }, []);
 
-    // Set manual frequency
+    // 设置手动频率
     const setManualFrequency = useCallback((freq) => {
         setTuningState(prev => ({ ...prev, manualFrequency: freq }));
     }, []);
 
-    // Update auto-tuning result
+    // 更新自动调谐结果
     const updateAutoTuning = useCallback((stationId, frequency) => {
         setTuningState(prev => ({
             ...prev,
@@ -143,7 +143,7 @@ export const VORManagerProvider = ({ children }) => {
         }));
     }, []);
 
-    // Get the currently active VOR station based on tuning mode
+    // 根据调谐模式获取当前激活的 VOR 台站
     const getActiveVORStation = useCallback(() => {
         if (tuningState.mode === 'manual') {
             return findVORByFrequency(tuningState.manualFrequency);

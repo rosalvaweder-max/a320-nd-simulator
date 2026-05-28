@@ -38,7 +38,7 @@ const FlightPlanManager = () => {
             key: 'manager-container',
             className: 'bg-gray-900 border-2 border-cyan-500/50 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl shadow-cyan-500/20'
         }, [
-            // Header
+            // 标题栏
             React.createElement('div', {
                 key: 'header',
                 className: 'p-6 border-b border-gray-800 flex justify-between items-center bg-gray-800/50'
@@ -57,7 +57,7 @@ const FlightPlanManager = () => {
                 }, '✕')
             ]),
 
-            // Content
+            // 内容区域
             React.createElement('div', {
                 key: 'content',
                 className: 'flex-grow overflow-y-auto p-6'

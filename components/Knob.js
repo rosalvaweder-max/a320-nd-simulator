@@ -1,11 +1,11 @@
 import React from 'react';
 
 const SelectorKnob = ({ options, value, onChange }) => {
-    // Find the current option to get its angle
+    // 查找当前选项以获取其角度
     const currentOption = options.find(opt => opt.value === value);
     const rotation = currentOption ? currentOption.angle : 0;
 
-    // Handle click on an option
+    // 处理选项点击
     const handleOptionClick = (opt) => {
         onChange(opt.value);
     };
@@ -13,17 +13,17 @@ const SelectorKnob = ({ options, value, onChange }) => {
     return React.createElement('div', {
         className: 'relative w-32 h-32 flex items-center justify-center'
     }, [
-        // Outer Bezel
+        // 外圈边框
         React.createElement('div', {
             key: 'outer-bezel',
             className: 'absolute inset-0 rounded-full border-4 border-gray-800 bg-[#dcdcdc] shadow-[2px_2px_5px_rgba(0,0,0,0.3),inset_0_0_10px_rgba(0,0,0,0.1)]'
         }),
         
-        // Options around the knob
+        // 旋钮周围的选项
         options.map((option) => {
-            // Calculate position for each option
+            // 计算每个选项的位置
             const angleRad = (option.angle * Math.PI) / 180;
-            const radius = 45; // Distance from center
+            const radius = 45; // 距中心距离
             const x = Math.sin(angleRad) * radius;
             const y = -Math.cos(angleRad) * radius;
 
@@ -49,7 +49,7 @@ const SelectorKnob = ({ options, value, onChange }) => {
             }, option.label));
         }),
         
-        // Center Screw
+        // 中心螺丝
         React.createElement('div', {
             key: 'center-screw',
             className: 'relative w-12 h-12 bg-gray-400 rounded-full border-2 border-gray-600 flex items-center justify-center shadow-inner'
@@ -64,7 +64,7 @@ const SelectorKnob = ({ options, value, onChange }) => {
                 })
             ]),
             
-            // Pointer
+            // 指针
             React.createElement('div', {
                 key: 'pointer',
                 className: 'absolute w-2 h-16 bg-red-600 rounded-full origin-bottom transform -translate-y-1/2',

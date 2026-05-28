@@ -1,4 +1,4 @@
-  import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import EFISPanel from './components/EFISPanel.js';
 import NDDisplay from './components/NDDisplay.js';
 import FlightPlanManager from './components/FlightPlanManager.js';
@@ -71,21 +71,20 @@ const App = () => {
   const [mode, setMode] = useState('PLAN');
   const [range, setRange] = useState(40);
   
-  // System State
+  // 系统状态：地形/天气/计时器/故障模拟
   const [systemState, setSystemState] = useState({
-    showTerrain: false,
-    showWeather: false,
-    showChrono: false,
-    chronoStartTime: null,
-    isFailureSimulated: false,
+    showTerrain: false,       // 显示地形
+    showWeather: false,       // 显示天气雷达
+    showChrono: false,        // 显示计时器
+    chronoStartTime: null,    // 计时器开始时间
+    isFailureSimulated: false, // 故障模拟
   });
 
-  // Teaching Mode State (Auto Modal)
+  // 教学模式状态（自动弹窗）
   const [explainedModes, setExplainedModes] = useState(new Set());
   const [activeExplanation, setActiveExplanation] = useState(null);
 
-
-  // Effect to trigger modal when mode changes
+  // 模式切换时自动弹出教学模式说明
   useEffect(() => {
     if (!explainedModes.has(mode)) {
         setActiveExplanation(MODE_DESCRIPTIONS[mode]);
@@ -97,50 +96,47 @@ const App = () => {
       setActiveExplanation(null);
   };
 
-
-
-  // Track the index of the waypoint we are flying TO.
-  // Start at 1 (Flying from 0 -> 1)
+  // 当前飞往的航路点索引（从1开始，即从航点0飞往航点1）
   const targetIndexRef = useRef(1);
   
-  // Flight phase: 'STRAIGHT' | 'TURNING'
+  // 飞行阶段：'STRAIGHT'（直飞）| 'TURNING'（转弯）
   const flightPhaseRef = useRef('STRAIGHT');
   
-  // Turn state: arc angle during turn (radians)
+  // 转弯状态：转弯过程中的圆弧角度（弧度）
   const turnArcAngleRef = useRef(0);
   
-  // Cached turn data (outbound heading, direction, arc center, etc.)
+  // 缓存的转弯数据（出航航向、方向、圆弧中心等）
   const turnDataRef = useRef(null);
   
-  // Aircraft position ref for physics engine (avoids setAircraft async issues)
+  // 飞机位置引用（用于物理引擎，避免 setAircraft 异步问题）
   const aircraftPosRef = useRef({ x: 0, y: 0, gs: 432 });
   
   // 调试信息
   console.log('初始目标索引:', targetIndexRef.current);
 
-  // Simulated Aircraft State
+  // 模拟飞机状态
   const [aircraft, setAircraft] = useState({
-    x: 0, 
+    x: 0,
     y: 0,
-    heading: 0, 
+    heading: 0,
     track: 0,
-    gs: 432,
-    tas: 457,
-    windDir: 90,
-    windSpeed: 25,
+    gs: 432,          // 地速（节）
+    tas: 457,         // 真空速（节）
+    windDir: 90,      // 风向
+    windSpeed: 25,    // 风速（节）
     selectedHeading: 0,
-    course: 340,
-    nextWaypointId: '' // Will be set in effect
+    course: 340,      // 航道
+    nextWaypointId: '' // 下一航点ID（在 effect 中设置）
   });
 
-  // Init position and heading to start of route
+  // 初始化飞机位置和航向到航路起点
   useEffect(() => {
     if (activeRoute && activeRoute.waypoints.length > 1) {
        const start = activeRoute.waypoints[0];
        const next = activeRoute.waypoints[1];
        aircraftPosRef.current = { x: start.x, y: start.y, gs: 432 };
        
-       // Compute initial heading from first leg
+       // 计算第一段航段的初始航向
        const initDx = next.x - start.x;
        const initDy = next.y - start.y;
        const initHeadingRad = Math.atan2(initDx, initDy);
@@ -156,11 +152,11 @@ const App = () => {
           nextWaypointId: next.id
        }));
        targetIndexRef.current = 1;
-       console.log('Init position:', start.x, start.y, 'heading:', initHeading.toFixed(1));
+       console.log('初始位置:', start.x, start.y, '航向:', initHeading.toFixed(1));
     }
   }, [activeRoute]);
 
-  // Toggle Handlers
+  // 切换开关处理函数
   const toggleTerrain = () => setSystemState(s => ({ ...s, showTerrain: !s.showTerrain }));
   const toggleWeather = () => setSystemState(s => ({ ...s, showWeather: !s.showWeather }));
   const toggleFailure = () => setSystemState(s => ({ ...s, isFailureSimulated: !s.isFailureSimulated }));
@@ -174,8 +170,8 @@ const App = () => {
      });
   };
 
-  // --- AUTO VOR TUNING ---
-  // Update auto-tuning based on aircraft position
+  // --- 自动 VOR 调谐 ---
+  // 根据飞机位置自动更新 VOR 频率
   useEffect(() => {
     if (tuningState.mode === 'auto') {
       const nearest = findNearestVORStation(aircraft.x, aircraft.y);
@@ -185,17 +181,17 @@ const App = () => {
     }
   }, [aircraft.x, aircraft.y, tuningState.mode]);
 
-  // --- PHYSICS ENGINE ---
+  // --- 物理引擎 ---
   useEffect(() => {
     let animationFrameId;
     let lastTime = Date.now();
     
-    // Constants matching NDDisplay.js
+    // 与 NDDisplay.js 匹配的常量
     const ND_WIDTH = 600;
     
-    // Standard rate turn = 3°/s
-    // Turn radius = V / (ω * 3600) where ω = 3°/s in rad/s
-    // At 432 kts: r = 432 / (3600 * π/60) ≈ 2.3 NM
+    // 标准转弯率 = 3°/秒
+    // 转弯半径 = V / (ω * 3600)，其中 ω = 3°/秒 转换为弧度/秒
+    // 在 432 节时：r = 432 / (3600 * π/60) ≈ 2.3 海里
     const TURN_RATE_DEG_PER_SEC = 3;
     const TURN_RATE_RAD_PER_SEC = TURN_RATE_DEG_PER_SEC * Math.PI / 180;
     
@@ -205,7 +201,7 @@ const App = () => {
       lastTime = now;
 
       // ==========================================
-      // PHASE 1: Read current state from refs (synchronous)
+      // 阶段1：从 refs 读取当前状态（同步）
       // ==========================================
       if (!activeRoute || activeRoute.waypoints.length < 2) {
         animationFrameId = requestAnimationFrame(animate);
@@ -226,17 +222,16 @@ const App = () => {
       const speedFactor = 1;
 
       // ==========================================
-      // PHASE 2: Compute turn data (synchronous)
+      // 阶段2：计算转弯数据（同步）
       // ==========================================
-      // Real A320 fly-over waypoint turn with proper circular arc:
-      // 1. Aircraft flies straight toward the target waypoint
-      // 2. Upon reaching the waypoint, it begins a standard rate turn
-      // 3. During the turn, the aircraft follows a circular arc of radius
-      //    turnRadiusNM, centered at a point perpendicular to the inbound
-      //    heading at distance turnRadiusNM from the waypoint.
-      // 4. When heading matches the outbound leg, resume straight flight
+      // 真实的 A320 飞越航路点转弯，使用正确的圆弧几何：
+      // 1. 飞机直线飞向目标航路点
+      // 2. 到达航路点后，开始标准速率转弯
+      // 3. 转弯过程中，飞机沿半径为 turnRadiusNM 的圆弧飞行
+      //    圆弧中心位于入航航向垂直方向、距航路点 turnRadiusNM 处
+      // 4. 当航向与出航航段匹配时，恢复直线飞行
       //
-      // Turn data is computed once when approaching a waypoint.
+      // 转弯数据在接近航路点时一次性计算
       const prevIdx = Math.max(0, currentTargetIdx - 1);
       const prevWpt = route[prevIdx];
       const hasNextWpt = currentTargetIdx < route.length - 1;
@@ -245,7 +240,7 @@ const App = () => {
       const inDy = targetWpt.y - prevWpt.y;
       const inLen = Math.sqrt(inDx * inDx + inDy * inDy);
 
-      // Compute turn data only when approaching a waypoint that needs a turn
+      // 仅在接近需要转弯的航路点时计算转弯数据
       if (hasNextWpt && !turnDataRef.current) {
         const nextWpt = route[currentTargetIdx + 1];
         const outDx = nextWpt.x - targetWpt.x;
@@ -260,62 +255,59 @@ const App = () => {
           const dot = uInX * uOutX + uInY * uOutY;
           const angle = Math.acos(Math.max(-1, Math.min(1, dot)));
 
-          if (angle > 0.087) { // ~5 degrees minimum
-            // Compute inbound heading
+          if (angle > 0.087) { // 最小转弯角度约5度
+            // 计算入航航向
             const inboundHeadingRad = Math.atan2(inDx, inDy);
             let inboundHeadingDeg = inboundHeadingRad * (180 / Math.PI);
             if (inboundHeadingDeg < 0) inboundHeadingDeg += 360;
 
-            // Compute outbound heading
+            // 计算出航航向
             const outboundHeadingRad = Math.atan2(outDx, outDy);
             let outboundHeadingDeg = outboundHeadingRad * (180 / Math.PI);
             if (outboundHeadingDeg < 0) outboundHeadingDeg += 360;
 
-            // Calculate turn angle (signed, negative = left turn / heading decreases)
+            // 计算转弯角度（带符号，负值=左转/航向减小）
             let turnAngle = outboundHeadingDeg - inboundHeadingDeg;
-            // Normalize to [-180, 180]
+            // 归一化到 [-180, 180]
             if (turnAngle > 180) turnAngle -= 360;
             if (turnAngle < -180) turnAngle += 360;
             const absTurnAngle = Math.abs(turnAngle);
-            // Left turn: heading decreases (turnAngle < 0)
-            // Right turn: heading increases (turnAngle > 0)
+            // 左转：航向减小（turnAngle < 0）
+            // 右转：航向增大（turnAngle > 0）
             const isLeftTurn = turnAngle < 0;
 
-            // Compute turn radius in NM
+            // 计算转弯半径（海里）
             const turnRadiusNM = gs / (3600 * TURN_RATE_RAD_PER_SEC);
             
-            // For fly-over turn: arc center is perpendicular to inbound heading
-            // at distance turnRadiusNM from the waypoint.
-            // Left turn (heading decreases): center is to the LEFT of inbound direction.
-            //   In aviation heading: left = heading - 90°
-            // Right turn (heading increases): center is to the RIGHT of inbound direction.
-            //   In aviation heading: right = heading + 90°
+            // 飞越转弯：圆弧中心位于入航航向垂直方向、距航路点 turnRadiusNM 处
+            // 左转（航向减小）：中心在入航方向的左侧
+            //   航空航向中：左 = 航向 - 90°
+            // 右转（航向增大）：中心在入航方向的右侧
+            //   航空航向中：右 = 航向 + 90°
             const perpAngleRad = inboundHeadingRad + (isLeftTurn ? -Math.PI / 2 : Math.PI / 2);
             const arcCenterX = targetWpt.x + Math.sin(perpAngleRad) * turnRadiusNM;
             const arcCenterY = targetWpt.y + Math.cos(perpAngleRad) * turnRadiusNM;
             
-            // Arc start angle: angle from arc center to waypoint
-            // Uses atan2(dx, dy) which returns aviation heading (0°=north, CW)
+            // 圆弧起始角：从圆弧中心到航路点的角度
+            // 使用 atan2(dx, dy) 返回航空航向（0°=北，顺时针）
             const arcStartAngle = Math.atan2(targetWpt.x - arcCenterX, targetWpt.y - arcCenterY);
             
-            // Total arc angle: the signed angular distance the aircraft travels along the arc.
-            // Left turn (heading decreases) = CCW rotation in world:
-            //   aviation heading angle DECREASES along the arc
-            //   totalArcAngle should be NEGATIVE
-            // Right turn (heading increases) = CW rotation in world:
-            //   aviation heading angle INCREASES along the arc
-            //   totalArcAngle should be POSITIVE
+            // 总圆弧角：飞机沿圆弧飞行的有符号角距离
+            // 左转（航向减小）= 世界坐标系中逆时针旋转：
+            //   航空航向沿圆弧减小，totalArcAngle 应为负值
+            // 右转（航向增大）= 世界坐标系中顺时针旋转：
+            //   航空航向沿圆弧增大，totalArcAngle 应为正值
             const absTurnAngleRad = absTurnAngle * Math.PI / 180;
             const totalArcAngle = isLeftTurn ? -absTurnAngleRad : absTurnAngleRad;
             
-            // Arc end angle: arcStartAngle + totalArcAngle
-            // (the angle at the arc center corresponding to the end of the turn)
+            // 圆弧终止角：arcStartAngle + totalArcAngle
+            //（圆弧中心对应转弯结束时的角度）
             let arcEndAngle = arcStartAngle + totalArcAngle;
-            // Normalize to [-π, π]
+            // 归一化到 [-π, π]
             if (arcEndAngle > Math.PI) arcEndAngle -= 2 * Math.PI;
             if (arcEndAngle < -Math.PI) arcEndAngle += 2 * Math.PI;
             
-            // Store turn data with arc geometry
+            // 存储带圆弧几何的转弯数据
             turnDataRef.current = {
               inboundHeadingDeg,
               outboundHeadingDeg,
@@ -324,7 +316,7 @@ const App = () => {
               absTurnAngle,
               nextWpt,
               uOutX, uOutY,
-              // Arc geometry
+              // 圆弧几何数据
               arcCenterX,
               arcCenterY,
               arcStartAngle,
@@ -340,11 +332,11 @@ const App = () => {
       const turnData = turnDataRef.current;
 
       // ==========================================
-      // PHASE 3: Get current aircraft position from ref
+      // 阶段3：从 ref 获取当前飞机位置
       // ==========================================
       const pos = aircraftPosRef.current;
 
-      // Distance to current target waypoint
+      // 到当前目标航路点的距离
       const dx = targetWpt.x - pos.x;
       const dy = targetWpt.y - pos.y;
       const distToTarget = Math.sqrt(dx*dx + dy*dy);
@@ -353,63 +345,61 @@ const App = () => {
       const moveDist = nmPerSec * dt;
 
       // ==========================================
-      // PHASE 4: Flight phase management & movement
+      // 阶段4：飞行阶段管理与移动
       // ==========================================
-      // Fly-over waypoint turn with proper circular arc:
-      //   STRAIGHT: Fly directly toward the target waypoint
-      //   Upon reaching waypoint: enter TURNING phase
-      //   TURNING: Aircraft follows a circular arc of radius turnRadiusNM
-      //     - Arc center is perpendicular to inbound heading at turnRadiusNM from waypoint
-      //     - Position moves along the arc, heading is tangent to the arc
-      //     - When arc is complete (heading matches outbound), resume STRAIGHT
+      // 飞越航路点转弯（使用正确的圆弧几何）：
+      //   STRAIGHT（直飞）：直接飞向目标航路点
+      //   到达航路点后：进入 TURNING（转弯）阶段
+      //   TURNING（转弯）：飞机沿半径为 turnRadiusNM 的圆弧飞行
+      //     - 圆弧中心位于入航航向垂直方向、距航路点 turnRadiusNM 处
+      //     - 位置沿圆弧移动，航向与圆弧相切
+      //     - 圆弧完成（航向匹配出航方向）后，恢复 STRAIGHT
       
       let newPos;
       let newHeading;
       let newNextWptId = targetWpt.id;
 
-      // --- PHASE: TURNING (proper circular arc) ---
+      // --- 阶段：TURNING（转弯，使用正确的圆弧几何） ---
       if (flightPhaseRef.current === 'TURNING' && turnData) {
-        // Current arc angle
+        // 当前圆弧角度
         let currentAngle = turnArcAngleRef.current;
         
-        // Angular step along the arc: arcLength / radius = (speed * dt) / radius
+        // 沿圆弧的角步长：弧长/半径 = (速度 * dt) / 半径
         const angularStep = moveDist / turnData.turnRadiusNM;
         
-        // Advance the angle along the arc.
-        // Left turn (heading decreases) = CCW rotation in world:
-        //   aviation heading angle DECREASES along CCW arc
-        // Right turn (heading increases) = CW rotation in world:
-        //   aviation heading angle INCREASES along CW arc
+        // 沿圆弧推进角度
+        // 左转（航向减小）= 世界坐标系中逆时针旋转
+        // 右转（航向增大）= 世界坐标系中顺时针旋转
         let newAngle = currentAngle + (turnData.isLeftTurn ? -angularStep : angularStep);
         
-        // Check if we've completed the arc.
-        // totalArcAngle is the signed angular distance from arcStartAngle to arcEndAngle.
-        // For left turns (CCW in world): totalArcAngle is negative (aviation heading decreases)
-        // For right turns (CW in world): totalArcAngle is positive (aviation heading increases)
-        // We've completed the arc when the angle has traveled past arcEndAngle.
+        // 检查圆弧是否完成
+        // totalArcAngle 是从 arcStartAngle 到 arcEndAngle 的有符号角距离
+        // 左转：totalArcAngle 为负（航空航向减小）
+        // 右转：totalArcAngle 为正（航空航向增大）
+        // 当角度越过 arcEndAngle 时圆弧完成
         const angleTraveled = newAngle - turnData.arcStartAngle;
         
-        // For left turns (negative totalArcAngle): completed when angleTraveled <= totalArcAngle
-        // For right turns (positive totalArcAngle): completed when angleTraveled >= totalArcAngle
+        // 左转（负 totalArcAngle）：angleTraveled <= totalArcAngle 时完成
+        // 右转（正 totalArcAngle）：angleTraveled >= totalArcAngle 时完成
         const arcComplete = (turnData.isLeftTurn && angleTraveled <= turnData.totalArcAngle) ||
                             (!turnData.isLeftTurn && angleTraveled >= turnData.totalArcAngle);
         
         if (arcComplete) {
-          // Arc complete - resume straight flight
-          console.log('TURN complete (arc)');
+          // 圆弧完成 - 恢复直线飞行
+          console.log('转弯完成（圆弧）');
           flightPhaseRef.current = 'STRAIGHT';
           turnDataRef.current = null;
           turnArcAngleRef.current = 0;
           targetIndexRef.current = currentTargetIdx + 1;
           
-          // Position at arc end point
+          // 定位到圆弧终点
           const endAngle = turnData.arcEndAngle;
           newPos = {
             x: turnData.arcCenterX + Math.sin(endAngle) * turnData.turnRadiusNM,
             y: turnData.arcCenterY + Math.cos(endAngle) * turnData.turnRadiusNM
           };
           
-          // Move forward along outbound heading
+          // 沿出航航向继续前进
           const headingRad = turnData.outboundHeadingDeg * Math.PI / 180;
           newPos = {
             x: newPos.x + Math.sin(headingRad) * moveDist,
@@ -419,18 +409,18 @@ const App = () => {
           newHeading = turnData.outboundHeadingDeg;
           newNextWptId = turnData.nextWpt.id;
         } else {
-          // Still on the arc - compute position from arc center and angle
+          // 仍在圆弧上 - 从圆弧中心和角度计算位置
           turnArcAngleRef.current = newAngle;
           
-          // Position on the arc
+          // 圆弧上的位置
           newPos = {
             x: turnData.arcCenterX + Math.sin(newAngle) * turnData.turnRadiusNM,
             y: turnData.arcCenterY + Math.cos(newAngle) * turnData.turnRadiusNM
           };
           
-          // Heading is tangent to the arc:
-          // Left turn (CCW rotation in world): heading = angle - 90° (heading decreases along CCW arc)
-          // Right turn (CW rotation in world): heading = angle + 90° (heading increases along CW arc)
+          // 航向与圆弧相切：
+          // 左转（逆时针）：航向 = 角度 - 90°
+          // 右转（顺时针）：航向 = 角度 + 90°
           const tangentAngleRad = newAngle + (turnData.isLeftTurn ? -Math.PI / 2 : Math.PI / 2);
           newHeading = tangentAngleRad * (180 / Math.PI);
           if (newHeading < 0) newHeading += 360;
@@ -438,14 +428,14 @@ const App = () => {
           newNextWptId = targetWpt.id;
         }
       }
-      // --- PHASE: STRAIGHT (default) ---
+      // --- 阶段：STRAIGHT（直飞，默认） ---
       else {
-        // Check if we've reached the target waypoint
+        // 检查是否到达目标航路点
         if (distToTarget < 0.3) {
           console.log('到达目标:', targetWpt.name, '当前索引:', currentTargetIdx);
           
           if (currentTargetIdx === route.length - 1) {
-            // Loop back to start
+            // 回到起点循环
             console.log('到达最后一个航路点，重新开始循环');
             flightPhaseRef.current = 'STRAIGHT';
             turnDataRef.current = null;
@@ -462,38 +452,34 @@ const App = () => {
             return;
           }
           
-          // Check if a turn is needed
+          // 检查是否需要转弯
           if (turnData) {
-            // Start turning - begin circular arc from waypoint
+            // 开始转弯 - 从航路点开始圆弧
               flightPhaseRef.current = 'TURNING';
               turnArcAngleRef.current = turnData.arcStartAngle;
-              console.log('-> TURNING phase at waypoint:', targetWpt.name,
-                'inbound:', turnData.inboundHeadingDeg.toFixed(1),
-                '-> outbound:', turnData.outboundHeadingDeg.toFixed(1),
-                'radius:', turnData.turnRadiusNM.toFixed(2), 'NM');
+              console.log('-> 转弯阶段 航路点:', targetWpt.name,
+                '入航:', turnData.inboundHeadingDeg.toFixed(1),
+                '-> 出航:', turnData.outboundHeadingDeg.toFixed(1),
+                '半径:', turnData.turnRadiusNM.toFixed(2), '海里');
               
-              // First step along the arc
-              // Left turn (CCW in world): aviation heading angle decreases
-              // Right turn (CW in world): aviation heading angle increases
+              // 沿圆弧的第一步
               const angularStep = moveDist / turnData.turnRadiusNM;
               const firstAngle = turnData.arcStartAngle + (turnData.isLeftTurn ? -angularStep : angularStep);
               turnArcAngleRef.current = firstAngle;
               
-              // Position on the arc
+              // 圆弧上的位置
               newPos = {
                 x: turnData.arcCenterX + Math.sin(firstAngle) * turnData.turnRadiusNM,
                 y: turnData.arcCenterY + Math.cos(firstAngle) * turnData.turnRadiusNM
               };
               
-              // Heading tangent to the arc
-              // Left turn (CCW in world): heading = angle - 90°
-              // Right turn (CW in world): heading = angle + 90°
+              // 航向与圆弧相切
               const tangentAngleRad = firstAngle + (turnData.isLeftTurn ? -Math.PI / 2 : Math.PI / 2);
               newHeading = tangentAngleRad * (180 / Math.PI);
               if (newHeading < 0) newHeading += 360;
               newNextWptId = targetWpt.id;
           } else {
-            // No turn needed - advance to next waypoint
+            // 不需要转弯 - 前进到下一个航路点
             const nextIdx = currentTargetIdx + 1;
             const newStartWpt = targetWpt;
             const newEndWpt = route[nextIdx];
@@ -508,7 +494,7 @@ const App = () => {
             return;
           }
         } else {
-          // Fly straight toward the target waypoint
+          // 直线飞向目标航路点
           const legDx = targetWpt.x - pos.x;
           const legDy = targetWpt.y - pos.y;
           const legLen = Math.sqrt(legDx * legDx + legDy * legDy);
@@ -538,10 +524,10 @@ const App = () => {
         }
       }
 
-      // Update aircraft position ref (synchronous)
+      // 更新飞机位置引用（同步）
       aircraftPosRef.current = { ...newPos, gs: aircraftPosRef.current.gs || 432 };
 
-      // Update React state (async, but refs are already updated)
+      // 更新 React 状态（异步，但 refs 已更新）
       setAircraft(a => ({
         ...a,
         x: newPos.x,
@@ -562,10 +548,10 @@ const App = () => {
   return React.createElement('div', {
     className: 'min-h-screen bg-neutral-900 flex flex-col items-center justify-center p-4 md:p-8 space-y-8 font-sans text-gray-200'
   }, [
-    // --- FLIGHT PLAN MANAGER ---
+    // --- 飞行计划管理器 ---
     React.createElement(FlightPlanManager, { key: 'flight-plan-manager' }),
 
-    // --- MODE EXPLANATION MODAL ---
+    // --- 模式说明弹窗 ---
     activeExplanation && React.createElement('div', {
       key: 'modal',
       className: 'fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in'
@@ -592,12 +578,12 @@ const App = () => {
     ])),
 
 
-    // Main Layout
+    // 主布局
     React.createElement('div', {
       key: 'main-layout',
       className: 'flex flex-col lg:flex-row gap-8 lg:gap-16 items-start justify-center w-full max-w-7xl'
     }, [
-      // LEFT COLUMN: ND Display
+      // 左列：ND 显示器
       React.createElement('div', {
         key: 'nd-display-column',
         className: 'flex flex-col items-center space-y-4 flex-shrink-0'
@@ -606,7 +592,7 @@ const App = () => {
           key: 'nd-display-container',
           className: 'relative group shadow-2xl rounded-2xl bg-black'
         }, [
-          // CANVAS
+          // Canvas 画布
           React.createElement(NDDisplay, {
             key: 'nd-display',
             mode: mode, 
@@ -624,7 +610,7 @@ const App = () => {
         }, 'Captain Side ND')
       ]),
 
-      // RIGHT COLUMN: Controls
+      // 右列：控制面板
       React.createElement('div', {
         key: 'controls-column',
         
@@ -674,7 +660,7 @@ const App = () => {
           }))
         ]),
 
-        // Map Loader
+        // 地图加载器
         React.createElement('div', {
           key: 'map-loader',
           className: 'bg-[#151515] border border-gray-800 rounded-lg p-4 shadow-lg'
@@ -695,7 +681,7 @@ const App = () => {
           React.createElement(MapLoader, { key: 'map-loader-component' })
         ]),
 
-        // Telemetry
+        // 遥测数据面板
         React.createElement('div', {
           key: 'telemetry',
           className: 'bg-[#151515] border border-gray-800 rounded-lg p-5 shadow-lg relative overflow-hidden'
@@ -752,7 +738,7 @@ const App = () => {
             ])
           ]),
 
-          // Speed Multiplier
+          // 速度倍率滑块
           React.createElement('div', {
             key: 'speed-multiplier',
             className: 'pt-3 border-t border-gray-800'
@@ -785,7 +771,7 @@ const App = () => {
                 gs: newGs,
                 tas: newGs + 25
               }));
-              // Sync ref for animate loop
+              // 同步 ref 供动画循环使用
               aircraftPosRef.current = { ...aircraftPosRef.current, gs: newGs };
             },
             className: 'w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500 hover:accent-cyan-400 transition-all'
@@ -828,7 +814,7 @@ const App = () => {
               }, 'TERR'),
               React.createElement('span', {
                 key: 'terr-text',
-              }, 'Toggle EGPWS Terrain Map')
+              }, '切换 EGPWS 地形显示')
             ]),
             React.createElement('li', {
               key: 'wxr',
@@ -840,7 +826,7 @@ const App = () => {
               }, 'WXR'),
               React.createElement('span', {
                 key: 'wxr-text',
-              }, 'Toggle Weather Radar')
+              }, '切换天气雷达')
             ]),
             React.createElement('li', {
               key: 'chro',
@@ -852,7 +838,7 @@ const App = () => {
               }, 'CHRO'),
               React.createElement('span', {
                 key: 'chro-text',
-              }, 'Start/Stop/Reset Stopwatch')
+              }, '启动/停止/重置计时器')
             ]),
             React.createElement('li', {
               key: 'fail',
@@ -864,12 +850,12 @@ const App = () => {
               }, 'FAIL'),
               React.createElement('span', {
                 key: 'fail-text',
-              }, 'Simulate Signal Failure')
+              }, '模拟信号故障')
             ]),
             React.createElement('li', {
               key: 'note',
               className: 'pt-1 text-[10px] text-gray-500 italic leading-relaxed'
-            }, '* The aircraft automatically loops the route (WPT1 → FINAL → WPT1).')
+            }, '* 飞机自动循环飞行路线（WPT1 → FINAL → WPT1）。')
           ])
         ])
       ])

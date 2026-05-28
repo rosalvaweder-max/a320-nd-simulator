@@ -15,9 +15,9 @@ export const useFlightPlan = () => {
 const STORAGE_KEY = 'a320_simulator_routes';
 const MAP_STORAGE_KEY = 'a320_simulator_map_data';
 const ROUTE_VERSION_KEY = 'a320_simulator_route_version';
-const CURRENT_ROUTE_VERSION = 1; // Increment when default route data changes
+const CURRENT_ROUTE_VERSION = 1; // 默认航路数据变更时递增此版本号
 
-// Helper to ensure waypoints have navaidType
+// 辅助函数：确保航路点具有 navaidType 属性
 const ensureNavaidType = (wp) => {
     if (wp.navaidType) return wp;
     const typeMap = {
@@ -33,7 +33,7 @@ export const FlightPlanProvider = ({ children }) => {
     const [routes, setRoutes] = useState(() => {
         const storedVersion = localStorage.getItem(ROUTE_VERSION_KEY);
         if (storedVersion !== String(CURRENT_ROUTE_VERSION)) {
-            // Version mismatch - reset to defaults
+            // 版本不匹配 - 重置为默认值
             localStorage.removeItem(STORAGE_KEY);
             localStorage.setItem(ROUTE_VERSION_KEY, String(CURRENT_ROUTE_VERSION));
         } else {
@@ -41,7 +41,7 @@ export const FlightPlanProvider = ({ children }) => {
             if (stored) {
                 try {
                     const parsed = JSON.parse(stored);
-                    // Ensure all waypoints have navaidType (for backward compatibility)
+                    // 确保所有航路点都有 navaidType（向后兼容）
                     return parsed.map(route => ({
                         ...route,
                         waypoints: route.waypoints.map(ensureNavaidType)
@@ -213,7 +213,7 @@ export const FlightPlanProvider = ({ children }) => {
     const addWaypoint = (routeId, waypoint) => {
         setRoutes(prev => prev.map(r => {
             if (r.id === routeId) {
-                // Auto-set navaidType based on waypoint type if not already set
+                // 如果未设置 navaidType，则根据航路点类型自动设置
                 let navaidType = waypoint.navaidType;
                 if (!navaidType) {
                     const typeMap = {

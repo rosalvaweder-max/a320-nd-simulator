@@ -34,7 +34,7 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
   const cx = width / 2;
   const cy = height / 2;
 
-  // Memoize active points
+  // 记忆化活跃航路点
   const activePoints = useMemo(() => {
     return activeRoute ? activeRoute.waypoints : [];
   }, [activeRoute]);
@@ -43,7 +43,7 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
     return secondaryRoute ? secondaryRoute.waypoints : [];
   }, [secondaryRoute]);
 
-  // Memoize target waypoint for PLAN mode
+  // 记忆化 PLAN 模式的目标航路点
   const targetWaypoint = useMemo(() => {
     if (mode !== 'PLAN' || !activeRoute) return null;
     
@@ -57,7 +57,7 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
     return targetWpt;
   }, [mode, aircraft.nextWaypointId, activeRoute]);
 
-  // Function to find next VOR in a route (case-insensitive) - moved outside for reuse
+  // 在航路中查找下一个 VOR 台站（不区分大小写）- 移到外部以便复用
   const findNextVORInRoute = useCallback((route, startFromCurrent = true, routeName = 'unknown') => {
       if (!route || !route.waypoints || route.waypoints.length === 0) {
           console.log(`  ${routeName}: No route or waypoints`);
@@ -66,7 +66,7 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
       
       console.log(`  ${routeName}: Checking ${route.waypoints.length} waypoints`);
       
-      // Log all waypoints for debugging
+      // 记录所有航路点用于调试
       route.waypoints.forEach((wp, idx) => {
           console.log(`    [${idx}] ${wp.name || wp.id}: type="${wp.type}", id="${wp.id}"`);
       });
@@ -84,10 +84,10 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
           console.log(`  ${routeName}: Starting from beginning (index 0)`);
       }
       
-      // Find first VOR after start index (case-insensitive check)
+      // 查找起始索引后的第一个 VOR（不区分大小写）
       for (let i = startIndex; i < route.waypoints.length; i++) {
           const wp = route.waypoints[i];
-          // Check if waypoint is a VOR (case-insensitive) - check both type and navaidType fields
+          // 检查航路点是否为 VOR（不区分大小写）- 同时检查 type 和 navaidType 字段
           const isVOR = (wp.type && wp.type.toUpperCase() === 'VOR') ||
                        (wp.navaidType && wp.navaidType.toUpperCase() === 'VOR');
           if (isVOR) {
@@ -96,7 +96,7 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
           }
       }
       
-      // If not found after start index, search from beginning
+      // 如果在起始索引后未找到，从头开始搜索
       for (let i = 0; i < startIndex; i++) {
           const wp = route.waypoints[i];
           const isVOR = (wp.type && wp.type.toUpperCase() === 'VOR') ||
@@ -111,7 +111,7 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
       return null;
   }, [aircraft.nextWaypointId]);
 
-  // Function to find next FIX in a route (case-insensitive)
+  // 在航路中查找下一个 FIX 定位点（不区分大小写）
   const findNextFIXInRoute = useCallback((route, startFromCurrent = true, routeName = 'unknown') => {
       if (!route || !route.waypoints || route.waypoints.length === 0) {
           console.log(`  ${routeName}: No route or waypoints for FIX search`);
@@ -133,10 +133,10 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
           console.log(`  ${routeName}: Starting from beginning (index 0) for FIX`);
       }
       
-      // Find first FIX after start index (case-insensitive check)
+      // 查找起始索引后的第一个 FIX（不区分大小写）
       for (let i = startIndex; i < route.waypoints.length; i++) {
           const wp = route.waypoints[i];
-          // Check if waypoint is a FIX (case-insensitive) - check both type and navaidType fields
+          // 检查航路点是否为 FIX（不区分大小写）- 同时检查 type 和 navaidType 字段
           const isFIX = (wp.type && wp.type.toUpperCase() === 'FIX') ||
                        (wp.navaidType && wp.navaidType.toUpperCase() === 'FIX');
           if (isFIX) {
@@ -145,7 +145,7 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
           }
       }
       
-      // If not found after start index, search from beginning
+      // 如果在起始索引后未找到，从头开始搜索
       for (let i = 0; i < startIndex; i++) {
           const wp = route.waypoints[i];
           const isFIX = (wp.type && wp.type.toUpperCase() === 'FIX') ||
@@ -160,52 +160,52 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
       return null;
   }, [aircraft.nextWaypointId]);
 
-  // Memoize coordinate system setup
+  // 记忆化坐标系设置
   const coordinateSystem = useMemo(() => {
-    // Default Projection Settings (ROSE / NAV)
+    // 默认投影设置（ROSE / NAV）
     let pxPerNM = (height * 0.45) / range;
     
-    // Screen Origin (Where the Map Center is placed on Screen)
+    // 屏幕原点（地图中心在屏幕上的位置）
     let screenOriginX = cx;
     let screenOriginY = cy;
     
-    // Map Center (Which World Coordinate is at the Screen Origin)
+    // 地图中心（屏幕原点对应的世界坐标）
     let mapCenterX = aircraft.x;
     let mapCenterY = aircraft.y;
     
-    // Map Rotation (Radians)
+    // 地图旋转（弧度）
     let mapRotation = 0;
 
-    // Mode Specific Adjustments
+    // 模式特定调整
     if (mode === 'PLAN') {
-      // PLAN Mode: North Up.
-      // STRICT REQUIREMENT: Center on the waypoint we are flying TO.
+      // PLAN 模式：正北朝上
+      // 严格要求：以正在飞往的航路点为中心
       if (targetWaypoint) {
         mapCenterX = targetWaypoint.x;
         mapCenterY = targetWaypoint.y;
       }
-      mapRotation = 0; // Fixed North Up
+      mapRotation = 0; // 固定正北朝上
       
     } else if (mode === 'ARC') {
-      // ARC Mode: Heading Up.
-      // Aircraft at bottom.
+      // ARC 模式：航向朝上
+      // 飞机在底部
       screenOriginY = height * 0.85;
-      // Scale pxPerNM so the 0.75 range arc intersects the screen side edges above midpoint.
-      // compassRadius=430px, 0.75 arc radius=322.5px, intersection at y=392.
-      // Label outer radius = 430+34=464px, top label y=46, well above corner text (y=30-105).
+      // 缩放 pxPerNM 使得 0.75 量程弧与屏幕侧边在中点上方相交
+      // compassRadius=430px, 0.75 弧半径=322.5px, 交点 y=392
+      // 标签外半径 = 430+34=464px, 顶部标签 y=46, 远高于角落文字 (y=30-105)
       pxPerNM = 430 / range;
-      mapRotation = -toRad(aircraft.heading); // Rotate world opposite to heading so heading direction aligns with screen UP
+      mapRotation = -toRad(aircraft.heading); // 世界坐标反向旋转航向角度，使航向方向与屏幕上方对齐
 
     } else {
-      // ROSE Mode: Heading Up.
-      // Aircraft at center.
-      mapRotation = -toRad(aircraft.heading); // Rotate world opposite to heading so heading direction aligns with screen UP
+      // ROSE 模式：航向朝上
+      // 飞机在中心
+      mapRotation = -toRad(aircraft.heading); // 世界坐标反向旋转航向角度，使航向方向与屏幕上方对齐
     }
 
     return { pxPerNM, screenOriginX, screenOriginY, mapCenterX, mapCenterY, mapRotation };
   }, [mode, range, aircraft.x, aircraft.y, aircraft.heading, height, cx, cy]);
 
-  // Memoize aircraft position on map
+  // 记忆化飞机在地图上的位置
   const acMapPosition = useMemo(() => {
     const { mapCenterX, mapCenterY, pxPerNM } = coordinateSystem;
     // 计算飞机相对于地图中心的位置
@@ -214,11 +214,11 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
     return { x, y };
   }, [aircraft.x, aircraft.y, coordinateSystem]);
 
-  // Memoize compass radius
-  // ROSE modes: radius = height * 0.38 (~228px) to leave room for corner data blocks
-  // ARC mode:   compass arc IS the outermost range arc, so radius = range * pxPerNM.
-  //             pxPerNM = 430/range, so compassRadius = 430px.
-  //             0.75 arc radius = 322.5px, intersects side edges at y=392.
+  // 记忆化罗盘半径
+  // ROSE 模式：半径 = height * 0.38 (~228px)，为角落数据块留出空间
+  // ARC 模式：罗盘弧即最外层的量程弧，因此半径 = range * pxPerNM
+  //           pxPerNM = 430/range, 所以 compassRadius = 430px
+  //           0.75 弧半径 = 322.5px, 与侧边相交于 y=392
   const compassRadius = useMemo(() => {
     const { pxPerNM } = coordinateSystem;
     if (mode === 'ARC') {
@@ -227,33 +227,33 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
     return height * 0.38;
   }, [mode, range, coordinateSystem, height]);
 
-  // Function to draw map background layer
+  // 绘制地图背景层
   const drawMapBackground = useCallback((ctx, mapCenterX, mapCenterY, pxPerNM, mapRotation, range) => {
     if (!mapData) return;
 
     ctx.save();
     
-    // Draw map waypoints (background layer)
+    // 绘制地图航路点（背景层）
     if (mapData.waypoints && mapData.waypoints.length > 0) {
-      ctx.globalAlpha = 0.3; // Semi-transparent for background
+      ctx.globalAlpha = 0.3; // 半透明背景
       mapData.waypoints.forEach(wp => {
         const sx = (wp.x - mapCenterX) * pxPerNM;
         const sy = -(wp.y - mapCenterY) * pxPerNM;
         
-        // Only draw waypoints within range
+        // 仅绘制在量程范围内的航路点
         const distance = Math.sqrt(sx * sx + sy * sy);
         if (distance > range * pxPerNM * 1.2) return;
         
-        // Skip VOR type waypoints in map background - they are managed by VORManagerContext
+        // 跳过地图背景中的 VOR 类型航路点 - 它们由 VORManagerContext 管理
         if (wp.type === 'VOR') return;
         
-        // Draw waypoint symbol based on type
+        // 根据类型绘制航路点符号
         ctx.fillStyle = COLORS.LABEL_CYAN;
         ctx.beginPath();
         
         switch (wp.type) {
           case 'AIRPORT':
-            // Draw airport symbol (circle with cross)
+            // 绘制机场符号（带十字的圆）
             ctx.arc(sx, sy, 4, 0, Math.PI * 2);
             ctx.moveTo(sx - 3, sy);
             ctx.lineTo(sx + 3, sy);
@@ -261,7 +261,7 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
             ctx.lineTo(sx, sy + 3);
             break;
           case 'NDB':
-            // Draw NDB symbol (triangle)
+            // 绘制 NDB 符号（三角形）
             ctx.beginPath();
             ctx.moveTo(sx, sy - 5);
             ctx.lineTo(sx - 4, sy + 3);
@@ -269,16 +269,16 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
             ctx.closePath();
             break;
           default:
-            // Draw FIX symbol (small circle)
+            // 绘制 FIX 符号（小圆）
             ctx.arc(sx, sy, 2, 0, Math.PI * 2);
         }
         
         ctx.fill();
         
-        // Draw waypoint label (only for important waypoints)
+        // 绘制航路点标签（仅对重要航路点）
         if (wp.type === 'AIRPORT') {
           ctx.save();
-          ctx.rotate(-mapRotation); // Keep text upright
+          ctx.rotate(-mapRotation); // 保持文字正向
           ctx.fillStyle = COLORS.LABEL_CYAN;
           ctx.font = '10px Inconsolata';
           ctx.textAlign = 'left';
@@ -290,7 +290,7 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
       ctx.globalAlpha = 1.0;
     }
     
-    // Draw airways if available
+    // 绘制航路（如果有）
     if (mapData.airways && mapData.airways.length > 0) {
       ctx.strokeStyle = COLORS.LABEL_CYAN;
       ctx.lineWidth = 0.5;
@@ -323,68 +323,68 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
     ctx.restore();
   }, [mapData]);
 
-  // Optimized drawing function
+  // 优化的绘制函数
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Clear canvas with black background
+    // 用黑色背景清空 Canvas
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, width, height);
 
     const { pxPerNM, screenOriginX, screenOriginY, mapCenterX, mapCenterY, mapRotation } = coordinateSystem;
     const { x: acMapX, y: acMapY } = acMapPosition;
     
-    // Debug: log heading and map rotation every 30 frames
+    // 调试：每 30 帧记录航向和地图旋转
     if (typeof window._ndFrameCount === 'undefined') window._ndFrameCount = 0;
     window._ndFrameCount++;
     if (window._ndFrameCount % 30 === 0) {
       console.log('NDDisplay render: mode=', mode, 'heading=', aircraft.heading?.toFixed(1), 'mapRotation(deg)=', (mapRotation * 180 / Math.PI).toFixed(1), 'acMapPos=', acMapX.toFixed(1), acMapY.toFixed(1), 'mapCenter=', mapCenterX.toFixed(1), mapCenterY.toFixed(1));
     }
 
-    // --- 1. Background ---
+    // --- 1. 背景 ---
     ctx.fillStyle = COLORS.BACKGROUND;
     ctx.fillRect(0, 0, width, height);
 
-    // --- FAILURE MODE ---
+    // --- 故障模式 ---
     if (systemState.isFailureSimulated) {
        drawFailureFlags(ctx, width, height);
        return;
     }
 
-    // --- 3. Clipping Mask (For ARC) ---
+    // --- 3. 裁剪遮罩（用于 ARC 模式） ---
     let arcClipSaved = false;
     if (mode === 'ARC') {
       ctx.save();
       ctx.beginPath();
       ctx.moveTo(screenOriginX, screenOriginY);
-      // Fan shape
+      // 扇形
       ctx.arc(screenOriginX, screenOriginY, range * pxPerNM + 20, toRad(-90 - 55), toRad(-90 + 55));
       ctx.closePath();
       ctx.clip();
       arcClipSaved = true;
     }
 
-    // --- 4. Dynamic Map Layers ---
+    // --- 4. 动态地图层 ---
     ctx.save();
     
-    // Apply Transform: Move to Screen Origin -> Rotate -> Move back?
-    // No, we want to draw relative to MapCenter.
-    // 1. Move to Screen Origin
+    // 应用变换：移动到屏幕原点 -> 旋转
+    // 我们希望相对于地图中心绘制
+    // 1. 移动到屏幕原点
     ctx.translate(screenOriginX, screenOriginY);
-    // 2. Rotate Map
+    // 2. 旋转地图
     ctx.rotate(mapRotation);
     
-    // Now (0,0) is the Map Center, oriented correctly.
-    // Objects at World(x,y) should be drawn at:
+    // 现在 (0,0) 是地图中心，方向正确
+    // 世界坐标 (x,y) 处的对象应绘制在：
     // x' = (x - mapCenterX) * pxPerNM
-    // y' = -(y - mapCenterY) * pxPerNM (Flip Y for canvas)
+    // y' = -(y - mapCenterY) * pxPerNM（Canvas 中 Y 轴翻转）
 
     if (systemState.showTerrain) {
-       // Terrain uses grid relative to AC/Center.
-       // We pass mapCenterX/Y as the reference point for the grid generator
+       // 地形使用相对于飞机/中心的网格
+       // 将 mapCenterX/Y 作为网格生成器的参考点传递
        drawEGPWSTerrain(ctx, mapCenterX, mapCenterY, range, pxPerNM);
     } else if (systemState.showWeather) {
         ctx.globalAlpha = 0.6;
@@ -392,14 +392,14 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
         ctx.globalAlpha = 1.0;
     }
     
-    // Draw map background layer (if map data is loaded)
+    // 绘制地图背景层（如果已加载地图数据）
     drawMapBackground(ctx, mapCenterX, mapCenterY, pxPerNM, mapRotation, range);
     
-    ctx.setLineDash([]); // Reset
+    ctx.setLineDash([]); // 重置虚线
 
-    // In VOR and ILS modes, hide flight plans to focus on navaid information
+    // 在 VOR 和 ILS 模式下，隐藏飞行计划以聚焦导航台信息
     if (mode !== 'VOR' && mode !== 'LS') {
-        // Flight Path (Secondary)
+        // 飞行路径（备用航路）
         if (secondaryPoints.length > 1) {
             ctx.beginPath();
             ctx.strokeStyle = COLORS.LABEL_CYAN;
@@ -416,27 +416,27 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
             ctx.setLineDash([]);
         }
 
-        // Flight Path (Active) - only connect waypoints where isConnected=true
-        // Filter to only connected waypoints for path drawing
+        // 飞行路径（激活航路）- 仅连接 isConnected=true 的航路点
+        // 过滤出已连接的航路点用于路径绘制
         const connectedPoints = activePoints.filter(wp => wp.isConnected !== false);
         if (connectedPoints.length > 1) {
             ctx.beginPath();
             ctx.strokeStyle = COLORS.ACTIVE_PATH;
             ctx.lineWidth = 3;
             
-            // Convert connected waypoints to screen coordinates
+            // 将已连接的航路点转换为屏幕坐标
             const pts = connectedPoints.map(wp => ({
                 sx: (wp.x - mapCenterX) * pxPerNM,
                 sy: -(wp.y - mapCenterY) * pxPerNM
             }));
             
-            // Route display: fly-over turns with circular arcs.
-            // The physics engine (App.js) uses proper circular arcs:
-            // aircraft flies straight TO each waypoint, then follows a circular arc
-            // of radius turnRadiusNM, then flies straight to the next waypoint.
-            // The route display shows the planned path with arcs at each waypoint.
+            // 航路显示：带圆弧的飞越转弯
+            // 物理引擎（App.js）使用正确的圆弧：
+            // 飞机直线飞向每个航路点，然后沿半径为 turnRadiusNM 的圆弧飞行，
+            // 再直线飞向下一个航路点
+            // 航路显示在每个航路点处显示带弧线的计划路径
             
-            // Compute turn radius for display (same formula as App.js)
+            // 计算用于显示的转弯半径（与 App.js 相同的公式）
             const TURN_RATE_RAD_PER_SEC = 3 * Math.PI / 180;
             const gs = aircraft.gs || 432;
             const turnRadiusNM = gs / (3600 * TURN_RATE_RAD_PER_SEC);
@@ -448,36 +448,36 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
                 const curr = pts[i];
                 
                 if (i < pts.length - 1) {
-                    // Intermediate waypoint: draw line to waypoint, then arc
+                    // 中间航路点：先画线到航路点，再画弧
                     const prev = pts[i - 1];
                     const next = pts[i + 1];
                     
-                    // Inbound direction in canvas
+                    // Canvas 中的入航方向
                     const inDx = curr.sx - prev.sx;
                     const inDy = curr.sy - prev.sy;
                     const inLen = Math.sqrt(inDx * inDx + inDy * inDy);
                     
-                    // Outbound direction in canvas
+                    // Canvas 中的出航方向
                     const outDx = next.sx - curr.sx;
                     const outDy = next.sy - curr.sy;
                     const outLen = Math.sqrt(outDx * outDx + outDy * outDy);
                     
                     if (inLen > 0.1 && outLen > 0.1) {
-                        // Compute turn direction.
-                        // In canvas coordinates (y inverted), compute the signed turn angle.
-                        // inbound heading in canvas: atan2(inDy, inDx)
-                        // outbound heading in canvas: atan2(outDy, outDx)
+                        // 计算转弯方向
+                        // 在 Canvas 坐标中（y 翻转），计算有符号转弯角度
+                        // Canvas 中的入航航向：atan2(inDy, inDx)
+                        // Canvas 中的出航航向：atan2(outDy, outDx)
                         const inHeadingCanvas = Math.atan2(inDy, inDx);
                         const outHeadingCanvas = Math.atan2(outDy, outDx);
                         let turnAngleCanvas = outHeadingCanvas - inHeadingCanvas;
-                        // Normalize to [-π, π]
+                        // 归一化到 [-π, π]
                         if (turnAngleCanvas > Math.PI) turnAngleCanvas -= 2 * Math.PI;
                         if (turnAngleCanvas < -Math.PI) turnAngleCanvas += 2 * Math.PI;
-                        // Left turn (heading decreases in aviation) = negative turnAngle in canvas
+                        // 左转（航向在航空中减小）= Canvas 中 turnAngle 为负
                         const isLeftTurn = turnAngleCanvas < 0;
                         
-                        // Arc center in canvas coordinates.
-                        // In canvas (y inverted), left perpendicular = (dy, -dx), right perpendicular = (-dy, dx)
+                        // Canvas 坐标中的弧心
+                        // 在 Canvas 中（y 翻转），左垂线 = (dy, -dx)，右垂线 = (-dy, dx)
                         const perpX = isLeftTurn ? inDy : -inDy;
                         const perpY = isLeftTurn ? -inDx : inDx;
                         const perpLen = Math.sqrt(perpX * perpX + perpY * perpY);
@@ -487,34 +487,34 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
                         const arcCenterCx = curr.sx + uPerpX * turnRadiusPx;
                         const arcCenterCy = curr.sy + uPerpY * turnRadiusPx;
                         
-                        // Arc start angle in canvas (from center to waypoint)
+                        // Canvas 中的弧起始角度（从中心到航路点）
                         const arcStartAngle = Math.atan2(curr.sy - arcCenterCy, curr.sx - arcCenterCx);
                         
-                        // Outbound direction angle in canvas
+                        // Canvas 中的出航方向角度
                         const outAngle = Math.atan2(outDy, outDx);
                         
-                        // Arc end angle in canvas.
-                        // Left turn (heading decreases, CW in canvas): tangent = θ - π/2, so θ = outAngle + π/2
-                        // Right turn (heading increases, CCW in canvas): tangent = θ + π/2, so θ = outAngle - π/2
+                        // Canvas 中的弧终止角度
+                        // 左转（航向减小，Canvas 中顺时针）：切线 = θ - π/2，所以 θ = outAngle + π/2
+                        // 右转（航向增大，Canvas 中逆时针）：切线 = θ + π/2，所以 θ = outAngle - π/2
                         const arcEndAngle = outAngle + (isLeftTurn ? Math.PI / 2 : -Math.PI / 2);
                         
-                        // Draw line to waypoint first
+                        // 先画线到航路点
                         ctx.lineTo(curr.sx, curr.sy);
                         
-                        // Draw arc on canvas.
-                        // Left turn (heading decreases) = CCW rotation around arc center in world.
-                        // In canvas (y inverted), CCW in world maps to:
-                        //   canvas angle = 90° - aviation_heading
-                        //   aviation heading decreases (CCW) → canvas angle increases (CCW)
-                        // So left turn = CCW in canvas = counterclockwise=true
-                        // Right turn (heading increases) = CW in world → canvas angle decreases (CW)
-                        // So right turn = CW in canvas = counterclockwise=false
+                        // 在 Canvas 上绘制弧
+                        // 左转（航向减小）= 世界中绕弧心逆时针旋转
+                        // 在 Canvas 中（y 翻转），世界中的逆时针映射为：
+                        //   Canvas 角度 = 90° - 航空航向
+                        //   航空航向减小（逆时针）→ Canvas 角度增大（逆时针）
+                        // 所以左转 = Canvas 中逆时针 = counterclockwise=true
+                        // 右转（航向增大）= 世界中顺时针 → Canvas 角度减小（顺时针）
+                        // 所以右转 = Canvas 中顺时针 = counterclockwise=false
                         ctx.arc(arcCenterCx, arcCenterCy, turnRadiusPx, arcStartAngle, arcEndAngle, isLeftTurn);
                     } else {
                         ctx.lineTo(curr.sx, curr.sy);
                     }
                 } else {
-                    // Last waypoint: just draw line to it
+                    // 最后一个航路点：直接画线到它
                     ctx.lineTo(curr.sx, curr.sy);
                 }
             }
@@ -522,10 +522,10 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
             ctx.stroke();
         }
 
-        // Waypoints Rendering
+        // 航路点渲染
         const drawRouteWaypoints = (wps, isActive) => {
-            // Only draw waypoints that are connected (isConnected !== false)
-            // Waypoints with isConnected=false are treated as VOR stations, not route waypoints
+            // 仅绘制已连接的航路点（isConnected !== false）
+            // isConnected=false 的航路点被视为 VOR 台站，而非航路点
             const routeWps = wps.filter(wp => wp.isConnected !== false);
             routeWps.forEach(wp => {
                 const sx = (wp.x - mapCenterX) * pxPerNM;
@@ -538,7 +538,7 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
                 
                 drawNavaid(ctx, sx, sy, wp.navaidType, color);
 
-                // Label
+                // 标签
                 ctx.fillStyle = color;
                 ctx.save();
                 ctx.translate(sx + 12, sy);
@@ -558,22 +558,22 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
         if (activeRoute) drawRouteWaypoints(activeRoute.waypoints, true);
     }
 
-    // Draw VOR stations from VORManagerContext on the map
-    // Only show in NAV, ARC, PLAN modes (not VOR/LS which have their own interface)
+    // 从VORManagerContext绘制地图上的VOR台站
+    // 仅在NAV、ARC、PLAN模式下显示（VOR/LS模式有自己的界面）
     if (mode !== 'VOR' && mode !== 'LS' && vorStations && vorStations.length > 0) {
         vorStations.forEach(station => {
             const sx = (station.x - mapCenterX) * pxPerNM;
             const sy = -(station.y - mapCenterY) * pxPerNM;
             
-            // Only draw within visible range
+            // 仅在可视范围内绘制
             const dist = Math.sqrt(sx * sx + sy * sy);
             if (dist > range * pxPerNM * 1.2) return;
             
-            // Draw VOR symbol (hexagon)
+            // 绘制VOR符号（六边形）
             drawNavaid(ctx, sx, sy, 'VOR', COLORS.LABEL_CYAN);
             
-            // Label: translate to label position first, THEN counter-rotate for upright text
-            // This ensures the label position uses the same transform as the symbol
+            // 标签：先平移到标签位置，然后反向旋转使文字保持正立
+            // 确保标签位置使用与符号相同的变换
             ctx.save();
             ctx.translate(sx + 8, sy - 6);
             ctx.rotate(-mapRotation);
@@ -585,13 +585,13 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
             ctx.restore();
         });
     }
-    // Energy Circle (removed per user request)
+    // 能量圈（根据用户要求已移除）
     // ctx.save();
     // ctx.translate(acMapX, acMapY);
     // drawEnergyCircle(ctx, 20 * pxPerNM);
     // ctx.restore();
 
-    // TCAS (disabled - removed per user request)
+    // TCAS（已禁用 - 根据用户要求移除）
     // MOCK_TCAS.forEach(target => {
     //   const tr = toRad(target.bearing);
     //   const tx = Math.sin(tr) * target.distance * pxPerNM;
@@ -601,45 +601,45 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
     //   drawTCASTarget(ctx, targetScreenX, targetScreenY, target, mapRotation);
     // });
     
-    // AIRCRAFT SYMBOL (PLAN MODE)
-    // In PLAN Mode, map is static North Up. Aircraft moves and rotates.
-    // The aircraft symbol nose points UP (canvas angle 270°). To make it point
-    // in the heading direction (canvas angle = heading - 90°), we need to rotate
-    // by +heading degrees. Verified for all 8 cardinal directions.
+    // 飞机符号（PLAN模式）
+    // 在PLAN模式下，地图固定为北向上。飞机移动和旋转。
+    // 飞机符号机头朝上（画布角度270°）。要使其指向
+    // 航向方向（画布角度 = 航向 - 90°），需要旋转
+    // +heading度。已验证所有8个基本方向。
     if (mode === 'PLAN') {
         ctx.save();
         ctx.translate(acMapX, acMapY);
-        ctx.rotate(toRad(aircraft.heading)); // Rotate aircraft symbol to match heading direction
+        ctx.rotate(toRad(aircraft.heading)); // 旋转飞机符号以匹配航向方向
         drawAircraftSymbol(ctx, 0, 0, 0.75);
         ctx.restore();
     }
 
-    ctx.restore(); // End Map Transform
-    if (arcClipSaved) ctx.restore(); // End Clip
+    ctx.restore(); // 结束地图变换
+    if (arcClipSaved) ctx.restore(); // 结束裁剪
 
-    // --- 5. Static Overlays (Compass, Aircraft in ROSE/ARC) ---
+    // --- 5. 静态叠加层（罗盘、ROSE/ARC模式下的飞机）---
     
-    // Compass Rose
+    // 罗盘刻度环
     ctx.save();
     ctx.translate(screenOriginX, screenOriginY);
     drawCompassRose(ctx, compassRadius, aircraft.heading, mode);
     ctx.restore();
 
-    // Aircraft Symbol (ROSE / ARC)
-    // Fixed on screen (Head Up), Map moves underneath
+    // 飞机符号（ROSE / ARC模式）
+    // 固定在屏幕上（航向向上），地图在下方移动
     if (mode !== 'PLAN') {
        drawAircraftSymbol(ctx, screenOriginX, screenOriginY, 0.75);
     }
 
-    // --- 6. Heading Bug & Track ---
-    // Drawn on top of compass
+    // --- 6. 航向游标（Heading Bug）与航迹指针 ---
+    // 绘制在罗盘之上
     ctx.save();
     ctx.translate(screenOriginX, screenOriginY);
     const bugR = compassRadius;
     
-    // Calculate Bug Angle relative to Screen Up (-90)
-    // PLAN (North Up): BugAngle = SelectedHeading - 90.
-    // ROSE/ARC (Heading Up): BugAngle = (SelectedHeading - CurrentHeading) - 90.
+    // 计算游标角度，相对于屏幕向上方向（-90°）
+    // PLAN（北向上）：游标角度 = 选定航向 - 90°
+    // ROSE/ARC（航向向上）：游标角度 = (选定航向 - 当前航向) - 90°
     
     let bugRad = 0;
     if (mode === 'PLAN') {
@@ -656,7 +656,7 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
         let rel = aircraft.selectedHeading - aircraft.heading;
         while(rel < -180) rel += 360;
         while(rel > 180) rel -= 360;
-        if(Math.abs(rel) > 60) drawBug = false; 
+        if(Math.abs(rel) > 60) drawBug = false; // ARC模式下超出60°范围不显示游标
     }
 
     if (drawBug) {
@@ -672,22 +672,22 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
         ctx.restore();
     }
     
-    // Track Pointer (green hollow diamond) - aircraft actual ground track
+    // 航迹指针（绿色空心菱形）- 飞机实际地面航迹
     drawTrackPointer(ctx, 0, 0, aircraft.heading, aircraft.track, compassRadius, mode);
     
-    // Lubber Line (Yellow line at top) - Only for Heading Up modes
+    // 航向标线（顶部黄色竖线）- 仅用于航向向上模式
     if (mode !== 'PLAN') {
         ctx.strokeStyle = COLORS.AIRCRAFT_YELLOW;
         ctx.lineWidth = 4;
         ctx.beginPath();
-        const ly = -compassRadius; // Relative to ScreenOrigin
+        const ly = -compassRadius; // 相对于屏幕原点
         ctx.moveTo(0, ly - 15);
         ctx.lineTo(0, ly + 5);
         ctx.stroke();
     }
     ctx.restore();
 
-    // --- Range Rings / Arcs (drawn in screen coordinates, outside map transform) ---
+    // --- 距离圈/弧（在屏幕坐标系中绘制，在地图变换之外）---
     ctx.save();
     ctx.lineWidth = 1;
     ctx.setLineDash([5, 5]);
@@ -696,42 +696,42 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
     ctx.textBaseline = "middle";
     ctx.strokeStyle = COLORS.COMPASS_WHITE;
 
-    // For non-ARC modes (ROSE NAV/VOR/LS/PLAN), range rings are based on compassRadius.
-    // compassRadius = height * 0.38 (~228px), which is the fixed compass ring size.
-    // The range ring is drawn at a fixed fraction of compassRadius.
+    // 对于非ARC模式（ROSE NAV/VOR/LS/PLAN），距离圈基于compassRadius。
+    // compassRadius = height * 0.38（约228px），是固定的罗盘环大小。
+    // 距离圈绘制在compassRadius的固定比例处。
     const drawRangeRing = (ringRadiusPx, labelNM) => {
         ctx.beginPath();
         ctx.arc(screenOriginX, screenOriginY, ringRadiusPx, 0, Math.PI * 2);
         ctx.stroke();
-        // Label inside the ring (slightly inward from the top)
+        // 标签在环内部（从顶部稍微向内偏移）
         ctx.fillStyle = COLORS.LABEL_CYAN;
         ctx.fillText(labelNM.toString(), screenOriginX, screenOriginY - ringRadiusPx + 16);
     };
 
-    // Calculate the angles where the 0.75 arc intersects the screen side edges.
-    // 0.75 arc radius = 0.75 * range * pxPerNM = 0.75 * 430 = 322.5px.
-    // Center at (300, 510), distance to side edges = 300px.
-    // Intersection y = 510 - sqrt(322.5² - 300²) = 510 - 118.3 = 391.7
-    // Left edge intersection angle: atan2(-118.3, -300) = -158.5°
-    // Right edge intersection angle: atan2(-118.3, 300) = -21.5°
+    // 计算0.75弧与屏幕侧边相交的角度。
+    // 0.75弧半径 = 0.75 * range * pxPerNM = 0.75 * 430 = 322.5px。
+    // 圆心在(300, 510)，到侧边的距离 = 300px。
+    // 交点y = 510 - sqrt(322.5² - 300²) = 510 - 118.3 = 391.7
+    // 左侧边交点角度：atan2(-118.3, -300) = -158.5°
+    // 右侧边交点角度：atan2(-118.3, 300) = -21.5°
     let arcStartAngle, arcEndAngle;
     if (mode === 'ARC') {
         const r75 = 0.75 * range * pxPerNM;  // 322.5px
         const dy = Math.sqrt(r75 * r75 - 300 * 300);  // 118.3
-        // Angles from center (300,510) to screen side edges at intersection height
-        arcStartAngle = Math.atan2(-dy, -300);  // left edge: -158.5°
-        arcEndAngle = Math.atan2(-dy, 300);     // right edge: -21.5°
+        // 从圆心(300,510)到屏幕侧边在交点高度处的角度
+        arcStartAngle = Math.atan2(-dy, -300);  // 左侧边：-158.5°
+        arcEndAngle = Math.atan2(-dy, 300);     // 右侧边：-21.5°
     }
 
     const drawRangeArc = (distNM) => {
         const rPx = distNM * pxPerNM;
         ctx.beginPath();
-        // All arcs use the same angular range: from left-edge intersection to right-edge intersection.
-        // 0.75 arc endpoints at screen side edges.
-        // 0.5 and 0.25 arc endpoints lie on the radii from center to the 0.75 arc endpoints.
+        // 所有弧使用相同的角度范围：从左侧边交点到右侧边交点。
+        // 0.75弧的端点在屏幕侧边上。
+        // 0.5和0.25弧的端点位于从圆心到0.75弧端点的半径上。
         ctx.arc(screenOriginX, screenOriginY, rPx, arcStartAngle, arcEndAngle, false);
         ctx.stroke();
-        // Label at top
+        // 顶部标签
         ctx.fillStyle = COLORS.LABEL_CYAN;
         ctx.fillText(distNM.toString(), screenOriginX, screenOriginY - rPx);
     };
@@ -741,19 +741,19 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
         drawRangeArc(range * 0.5);
         drawRangeArc(range * 0.25);
     } else if (mode === 'NAV') {
-        // ROSE NAV: range ring at 50% of compass radius
+        // ROSE NAV：距离圈在罗盘半径的50%处
         drawRangeRing(compassRadius * 0.5, Math.round(compassRadius * 0.5 / pxPerNM));
     } else if (mode === 'VOR' || mode === 'LS') {
-        // VOR and ILS modes: single range ring at 50% of compass radius
+        // VOR和ILS模式：单个距离圈在罗盘半径的50%处
         drawRangeRing(compassRadius * 0.5, Math.round(compassRadius * 0.5 / pxPerNM));
     } else {
-        // PLAN and other modes: range ring at 50% of compass radius
+        // PLAN和其他模式：距离圈在罗盘半径的50%处
         drawRangeRing(compassRadius * 0.5, Math.round(compassRadius * 0.5 / pxPerNM));
     }
     ctx.setLineDash([]);
     ctx.restore();
 
-    // --- Mode Label (top center) ---
+    // --- 模式标签（顶部居中）---
     ctx.save();
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
@@ -768,39 +768,39 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
     }
     ctx.restore();
 
-    // --- 7. Interface Layers (ILS/VOR) ---
+    // --- 7. 界面层（ILS/VOR）---
     if (mode === 'LS') {
-        // ILS Mode: Point to next waypoint
+        // ILS模式：指向下一个航路点
         let nextWaypoint = null;
         if (aircraft.nextWaypointId && activeRoute) {
             nextWaypoint = activeRoute.waypoints.find(w => w.id === aircraft.nextWaypointId);
         }
-        // If no next waypoint found, use first waypoint in active route
+        // 如果未找到下一个航路点，使用活动航路中的第一个航路点
         if (!nextWaypoint && activeRoute && activeRoute.waypoints.length > 0) {
             nextWaypoint = activeRoute.waypoints[0];
         }
-        // If still no waypoint, check secondary route
+        // 如果仍然没有航路点，检查备用航路
         if (!nextWaypoint && secondaryRoute && secondaryRoute.waypoints.length > 0) {
             nextWaypoint = secondaryRoute.waypoints[0];
         }
         
-        // Calculate course to next waypoint
-        let ilsCourse = aircraft.course || 360; // Default to 360 if not set
-        const gsDeviation = 0;  // GS deviation (vertical)
+        // 计算到下一个航路点的航向
+        let ilsCourse = aircraft.course || 360; // 如果未设置则默认为360
+        const gsDeviation = 0;  // 下滑道偏差（垂直方向）
         
-        // LOC deviation bar fixed in center
+        // LOC偏差杆固定在中心
         const locDeviation = 0;
         
         if (nextWaypoint) {
-            // Calculate bearing from aircraft to next waypoint
+            // 计算从飞机到下一个航路点的方位角
             const dx = nextWaypoint.x - aircraft.x;
             const dy = nextWaypoint.y - aircraft.y;
-            // Convert to degrees (0-360, where 0 is North)
+            // 转换为角度（0-360，0为北）
             ilsCourse = (Math.atan2(dy, dx) * 180 / Math.PI);
-            // Convert from math coordinates (0° = East) to navigation coordinates (0° = North)
+            // 从数学坐标系（0°=东）转换为导航坐标系（0°=北）
             ilsCourse = (90 - ilsCourse + 360) % 360;
             
-            console.log('ILS Mode: Next waypoint found, calculated course:', {
+            console.log('ILS模式：找到下一个航路点，计算航向：', {
                 wptName: nextWaypoint.name,
                 wptType: nextWaypoint.type,
                 aircraftCourse: aircraft.course,
@@ -808,26 +808,26 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
                 hasWaypoint: true
             });
         } else {
-            console.log('ILS Mode: No waypoint found, using default course:', ilsCourse);
+            console.log('ILS模式：未找到航路点，使用默认航向：', ilsCourse);
         }
         
         drawILSInterface(ctx, width, height, aircraft.heading, ilsCourse, locDeviation, gsDeviation, compassRadius, nextWaypoint, range, coordinateSystem.pxPerNM);
     } else if (mode === 'VOR') {
         // ============================================================
-        // PHASE 1: Determine VOR Station Source
+        // 阶段1：确定VOR台站来源
         // ============================================================
-        // Priority 1: Route VOR (highest) - VOR station in active flight plan
-        // Priority 2: Auto/Manual tuning (VORManagerContext) - pilot-tuned station
-        // Priority 3: Nearest VOR (fallback) - closest station by distance
+        // 优先级1：航路VOR（最高）- 活动飞行计划中的VOR台站
+        // 优先级2：自动/手动调谐（VORManagerContext）- 飞行员调谐的台站
+        // 优先级3：最近VOR（后备）- 按距离最近的台站
         let vorStation = null;
         
-        // Priority 1: Check if there's a VOR station in the active route
-        // In real A320 operations, when a VOR is part of the flight plan route,
-        // the ND automatically detects that VOR and uses it as the reference.
-        // This takes highest priority over auto/manual tuning because the
-        // flight plan VOR is the intended navigation reference for the route.
+        // 优先级1：检查活动航路中是否有VOR台站
+        // 在真实的A320操作中，当VOR是飞行计划航路的一部分时，
+        // ND会自动检测该VOR并将其用作参考。
+        // 这优先于自动/手动调谐，因为
+        // 飞行计划VOR是航路的预期导航参考。
         if (activeRoute && activeRoute.waypoints.length > 0) {
-            const routeVOR = activeRoute.waypoints.find(wp => 
+            const routeVOR = activeRoute.waypoints.find(wp =>
                 (wp.type && wp.type.toUpperCase() === 'VOR') ||
                 (wp.navaidType && wp.navaidType.toUpperCase() === 'VOR')
             );
@@ -841,83 +841,81 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
                     type: 'VOR',
                     navaidType: 'VOR',
                     distance: Math.sqrt(
-                        Math.pow(routeVOR.x - aircraft.x, 2) + 
+                        Math.pow(routeVOR.x - aircraft.x, 2) +
                         Math.pow(routeVOR.y - aircraft.y, 2)
                     )
                 };
             }
         }
         
-        // Priority 2: Fall back to VORManagerContext (auto/manual tuning)
+        // 优先级2：回退到VORManagerContext（自动/手动调谐）
         if (!vorStation) {
             vorStation = getActiveVORStation();
         }
         
-        // Priority 3: Fall back to nearest VOR station
+        // 优先级3：回退到最近的VOR台站
         if (!vorStation) {
             vorStation = findNearestVORStation(aircraft.x, aircraft.y);
         }
         
         // ============================================================
-        // PHASE 2: Calculate Common VOR Geometry (single pass)
+        // 阶段2：计算公共VOR几何参数（单次计算）
         // ============================================================
-        // Calculate bearing from aircraft to VOR station once, reuse everywhere.
-        // This avoids redundant Math.atan2 calls and ensures consistency
-        // between the bearing pointer, deviation calculation, and TO/FROM logic.
-        let bearingToVOR = null;    // Bearing FROM aircraft TO VOR station (0-360, 0=North)
-        let aircraftRadial = null;  // Aircraft radial FROM VOR station (reciprocal of bearing)
+        // 一次性计算从飞机到VOR台站的方位角，各处复用。
+        // 这避免了重复的Math.atan2调用，并确保
+        // 方位指针、偏差计算和TO/FROM逻辑之间的一致性。
+        let bearingToVOR = null;    // 从飞机到VOR台站的方位角（0-360，0=北）
+        let aircraftRadial = null;  // 飞机相对于VOR台站的径向线（方位角的反向）
         if (vorStation) {
             const dx = vorStation.x - aircraft.x;
             const dy = vorStation.y - aircraft.y;
-            // Math.atan2 gives angle in math coords (0°=East, CCW positive)
-            // Convert to navigation coords (0°=North, CW positive)
+            // Math.atan2给出数学坐标系中的角度（0°=东，逆时针为正）
+            // 转换为导航坐标系（0°=北，顺时针为正）
             bearingToVOR = (90 - Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
-            // Aircraft radial = reciprocal of bearing to station
+            // 飞机径向线 = 到台站方位角的反向
             aircraftRadial = (bearingToVOR + 180) % 360;
         }
         
         // ============================================================
-        // PHASE 3: Course (CRS) and Deviation Calculation
+        // 阶段3：航道（CRS）和偏差计算
         // ============================================================
-        // In real A320 VOR mode:
-        // - The course dagger (CDI) points at the SELECTED COURSE (CRS),
-        //   a fixed direction set by the pilot via the CRS selector knob.
-        //   It does NOT automatically follow the flight plan leg direction.
-        // - The deviation bar shows angular deviation between the aircraft's
-        //   VOR radial and the selected course.
-        // - During turns, the compass rotates with heading, so the dagger's
-        //   position relative to the compass changes smoothly.
-        //   (relRotation = course - heading)
-        // - TO/FROM: TO when heading is within ±90° of bearing to VOR station
+        // 在真实A320 VOR模式中：
+        // - 航道指针（CDI）指向选定航道（CRS），
+        //   这是飞行员通过CRS选择旋钮设定的固定方向。
+        //   它不会自动跟随飞行计划航段方向。
+        // - 偏差杆显示飞机VOR径向线与选定航道之间的角度偏差。
+        // - 转弯时，罗盘随航向旋转，因此指针
+        //   相对于罗盘的位置平滑变化。
+        //   （relRotation = course - heading）
+        // - TO/FROM：当航向在到VOR台站方位角的±90°范围内时为TO
         
-        // Use the pilot-set course (CRS) as the fixed reference.
+        // 使用飞行员设定的航道（CRS）作为固定参考。
         let vorCourse = aircraft.course || 360;
         let vorDeviation = 0;
         
-        // Deviation calculation:
-        // aircraftRadial = (bearingToStation + 180°) % 360  (the radial the aircraft is on)
+        // 偏差计算：
+        // aircraftRadial = (bearingToStation + 180°) % 360（飞机所在的径向线）
         // angularDev = aircraftRadial - selectedCourse
-        //   > 0: aircraft is RIGHT of course → bar deflects LEFT (fly left)
-        //   < 0: aircraft is LEFT of course  → bar deflects RIGHT (fly right)
+        //   > 0：飞机在航道右侧 → 杆向左偏（向左飞）
+        //   < 0：飞机在航道左侧 → 杆向右偏（向右飞）
         //
-        // The drawCourseDagger function draws the bar at +devOffset for
-        // positive deviation (right side in rotated frame). But in VOR
-        // convention, positive deviation means "fly left" (bar on right).
-        // So we NEGATE the deviation to match the display convention:
-        // bar on right → fly right (aircraft is left of course)
+        // drawCourseDagger函数在正偏差时在旋转帧的右侧绘制杆。
+        // 但在VOR惯例中，正偏差意味着"向左飞"（杆在右侧）。
+        // 因此我们对偏差取反以匹配显示惯例：
+        // 杆在右侧 → 向右飞（飞机在航道左侧）
         if (vorStation && aircraftRadial !== null) {
             let angularDev = aircraftRadial - vorCourse;
             if (angularDev > 180) angularDev -= 360;
             if (angularDev < -180) angularDev += 360;
-            // Negate and clamp to ±20° (full scale deflection)
+            // 取反并限制在±20°（满刻度偏转）
             vorDeviation = -Math.max(-20, Math.min(20, angularDev));
         }
         
         // ============================================================
-        // PHASE 4: TO/FROM Determination
+        // 阶段4：TO/FROM判定
         // ============================================================
-        // TO mode: aircraft heading is within ±90° of bearing to VOR station
-        // FROM mode: aircraft heading is within 90°-270° of bearing to VOR station
+        // TO模式：飞机航向在到VOR台站方位角的±90°范围内
+        // FROM模式：飞机航向在到VOR台站方位角的90°-270°范围内
         let isToMode = true;
         if (vorStation && bearingToVOR !== null) {
             const headingDiff = ((aircraft.heading - bearingToVOR) % 360 + 360) % 360;
@@ -925,7 +923,7 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
         }
         
         // ============================================================
-        // PHASE 5: Render VOR Interface
+        // 阶段5：渲染VOR界面
         // ============================================================
         const largeRingNM = Math.round(compassRadius / pxPerNM);
         const smallRingNM = Math.round(largeRingNM / 2);
@@ -933,11 +931,11 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
         drawVORInterface(ctx, width, height, aircraft.heading, vorCourse, vorStation, vorDeviation, isToMode, compassRadius, bearingToVOR, innerRingRadius, range, coordinateSystem.pxPerNM);
     }
 
-    // --- 8. Data Blocks ---
+    // --- 8. 数据块 ---
     drawGS_TAS(ctx, aircraft.gs, aircraft.tas);
     drawWindData(ctx, aircraft.windDir, aircraft.windSpeed, aircraft.heading, width);
     
-    // Show next waypoint info for NAV, ARC, and PLAN modes
+    // 在NAV、ARC和PLAN模式下显示下一个航路点信息
     if (mode === 'NAV' || mode === 'ARC' || mode === 'PLAN') {
         let activeWpt;
         if (aircraft.nextWaypointId && activeRoute) {
@@ -948,17 +946,17 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
         }
 
         if (activeWpt) {
-            // Calculate bearing to waypoint (track to fly)
+            // 计算到航路点的方位角（飞行航迹）
             const dx = activeWpt.x - aircraft.x;
             const dy = activeWpt.y - aircraft.y;
             let bearing = (Math.atan2(dy, dx) * 180 / Math.PI);
             bearing = (90 - bearing + 360) % 360;
             const trackToFly = Math.round(bearing);
             
-            // Calculate distance
+            // 计算距离
             const distToWpt = Math.sqrt(Math.pow(activeWpt.x - aircraft.x, 2) + Math.pow(activeWpt.y - aircraft.y, 2));
             
-            // Calculate ETA (estimated)
+            // 计算预计到达时间（估算）
             const now = new Date();
             const eta = new Date(now.getTime() + 5*60000);
             const etaStr = `${eta.getUTCHours().toString().padStart(2,'0')}${eta.getUTCMinutes().toString().padStart(2,'0')}`;
@@ -968,15 +966,15 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
     }
     
     // ============================================================
-    // Draw VOR Navaid Info (Left = VOR1, Right = VOR2)
-    // Only shown in VOR mode
+    // 绘制VOR导航台信息（左侧 = VOR1，右侧 = VOR2）
+    // 仅在VOR模式下显示
     // ============================================================
     if (mode === 'VOR') {
-        // VOR1 (Left side): Shows the VOR station currently used by the VOR mode.
-        // This follows the same priority logic as the VOR mode display:
-        //   1. Route VOR (if VOR station exists in active flight plan)
-        //   2. Auto/Manual tuned station (VORManagerContext)
-        //   3. Nearest VOR station (fallback)
+        // VOR1（左侧）：显示VOR模式当前使用的VOR台站。
+        // 遵循与VOR模式显示相同的优先级逻辑：
+        //   1. 航路VOR（如果活动飞行计划中存在VOR台站）
+        //   2. 自动/手动调谐台站（VORManagerContext）
+        //   3. 最近VOR台站（后备）
         let vor1Station = null;
         if (activeRoute && activeRoute.waypoints.length > 0) {
             const routeVOR = activeRoute.waypoints.find(wp =>
@@ -1019,11 +1017,11 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
             drawNavaidInfo(ctx, 'left', '---', '---', '--', height, width);
         }
         
-        // VOR2 (Right side): Shows the second VOR receiver's tuned station.
-        // In real A320, VOR2 is independently tunable via the right-side RMP.
-        // For this simulation, VOR2 shows the auto-tuned nearest station
-        // (which may differ from VOR1 when VOR1 is locked to a route VOR).
-        // This provides cross-reference capability for position fixing.
+        // VOR2（右侧）：显示第二个VOR接收机的调谐台站。
+        // 在真实A320中，VOR2可通过右侧RMP独立调谐。
+        // 在此模拟中，VOR2显示自动调谐的最近台站
+        // （当VOR1锁定到航路VOR时，可能与VOR1不同）。
+        // 这提供了用于定位的交叉参考能力。
         const vor2Station = findNearestVORStation(aircraft.x, aircraft.y);
         if (vor2Station) {
             drawNavaidInfo(ctx, 'right', vor2Station.name, vor2Station.frequency, vor2Station.distance.toFixed(1), height, width);
@@ -1032,6 +1030,7 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
         }
     }
     
+    // 显示计时器
     if (systemState.showChrono) {
         ctx.font = "bold 20px Inconsolata";
         ctx.fillStyle = COLORS.TEXT_WHITE;
@@ -1040,21 +1039,22 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
         ctx.fillText(timeStr, cx, height - 30);
     }
 
+    // 显示地形提示
     if (systemState.showTerrain) {
        ctx.font = "bold 18px Inconsolata";
        ctx.fillStyle = COLORS.TRACK_GREEN;
        ctx.textAlign = "center";
-       ctx.fillText("TERR ON ND", cx, height / 2 + 100); 
+       ctx.fillText("TERR ON ND", cx, height / 2 + 100);
     }
 
   }, [mode, range, aircraft.x, aircraft.y, aircraft.heading, aircraft.selectedHeading, aircraft.course, aircraft.gs, aircraft.tas, aircraft.windDir, aircraft.windSpeed, aircraft.nextWaypointId, activeRoute, secondaryRoute, systemState, activePoints, secondaryPoints, coordinateSystem, acMapPosition, compassRadius, width, height, cx, cy, vorStations, tuningState, getActiveVORStation, findNearestVORStation]);
 
-  // Use requestAnimationFrame for smooth rendering instead of setInterval
+  // 使用requestAnimationFrame实现平滑渲染，替代setInterval
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    // Set canvas size explicitly
+    // 显式设置画布尺寸
     canvas.width = width;
     canvas.height = height;
     
@@ -1074,12 +1074,12 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
   }, [
     React.createElement('canvas', {
       key: 'canvas',
-      ref: canvasRef, 
-      width: width, 
-      height: height, 
+      ref: canvasRef,
+      width: width,
+      height: height,
       className: 'block'
     }),
-    // Decorative Screws
+    // 装饰性螺丝（四角）
     React.createElement('div', {
       key: 'screw-top-left',
       className: 'absolute top-2 left-2 w-3 h-3 rounded-full bg-gray-700 shadow-inner'
