@@ -15,7 +15,7 @@
 ├── index.html                  # 入口HTML，加载React CDN + Tailwind CSS
 ├── index.js                    # JS入口，挂载React应用
 ├── App.js                      # 主组件：状态管理 + 物理引擎 + UI布局
-├── constants.js                # 全局常量：颜色、模式、航路点、TCAS、天气数据
+├── constants.js                # 全局常量：颜色、模式、航路点等
 ├── vite.config.js              # Vite构建配置（base路径、端口、插件）
 ├── package.json                # 依赖配置
 │
@@ -34,17 +34,11 @@
 │   ├── FlightPlanContext.js    # 航路数据管理（CRUD + localStorage持久化）
 │   └── VORManagerContext.js    # VOR台管理（自动/手动调谐 + 持久化）
 │
-├── services/                   # 服务层（扩展功能）
-│   ├── MapDataService.js       # 地图数据加载/解析/验证
-│   ├── SimulatorIntegrationService.js  # 模拟器集成（X-Plane/MSFS）
-│   ├── TCASService.js          # TCAS防撞系统模拟
-│   └── TerrainWeatherService.js      # 地形/天气雷达模拟
+├── services/                   # 服务层
+│   └── MapDataService.js       # 地图数据加载/解析/验证
 │
 ├── utils/                      # 工具函数
-│   ├── drawingUtils.js         # ★ Canvas绘图工具（所有ND符号绘制函数）
-│   ├── aviationSymbols.js      # 航空符号
-│   ├── DisplayEffects.js       # 显示特效（CRT/像素网格）
-│   └── RenderingOptimizer.js   # 渲染优化
+│   └── drawingUtils.js         # ★ Canvas绘图工具（所有ND符号绘制函数）
 │
 ├── data/                       # 数据文件
 │   ├── default-route-map.json  # 默认航路地图
@@ -229,7 +223,7 @@ Canvas 2D (最终渲染)
 
 | 文件 | 说明 |
 |------|------|
-| `constants.js` | 定义所有全局常量：空客标准颜色（MAGENTA/CYAN/GREEN/YELLOW等）、ND模式枚举、范围设置、字体规格、符号尺寸、显示常量、导航常量、模拟航路点（LFPG/EGLL等）、TCAS交通数据、天气雷达数据、地形数据 |
+| `constants.js` | 定义所有全局常量：空客标准颜色（MAGENTA/CYAN/GREEN/YELLOW等）、ND模式枚举、范围设置、字体规格、符号尺寸、显示常量、导航常量、模拟航路点（LFPG/EGLL等） |
 
 ### 6.3 核心组件
 
@@ -258,18 +252,12 @@ Canvas 2D (最终渲染)
 | 文件 | 说明 |
 |------|------|
 | `MapDataService.js` | 地图数据服务，约244行。负责从URL或文件加载JSON地图数据，进行数据验证和标准化，支持航路点、导航设施、航路数据的解析 |
-| `SimulatorIntegrationService.js` | 模拟器集成服务，约599行。设计用于连接X-Plane/MSFS等飞行模拟器，提供FlightData数据结构、数据更新率配置、UDP通信协议定义 |
-| `TCASService.js` | TCAS防撞系统服务，约553行。模拟TCAS II级别功能，包含威胁等级（RA/TA/PROXIMATE/OTHER）、决断建议类型、交通目标管理、碰撞预测算法 |
-| `TerrainWeatherService.js` | 地形和天气雷达服务，约501行。提供地形高程数据处理、EGPWS增强型近地警告系统模拟、天气雷达回波强度分级显示 |
 
 ### 6.6 工具函数
 
 | 文件 | 说明 |
 |------|------|
 | `drawingUtils.js` | Canvas绘图工具库，约867行。包含所有ND符号绘制函数：飞机符号（黄色"士"字形）、罗盘刻度、GS/TAS数据显示、风向风速指示、航路点信息、ILS界面（LOC/G/S偏差杆）、VOR界面（航道指针/偏差杆/TO-FROM指示器）、航迹指针、方位指针、导航台信息、TCAS目标、地形显示、天气雷达等 |
-| `aviationSymbols.js` | 航空符号绘制函数 |
-| `DisplayEffects.js` | 显示特效，如CRT扫描线效果、像素网格效果 |
-| `RenderingOptimizer.js` | 渲染优化工具，用于提升Canvas绘制性能 |
 
 ### 6.7 数据文件
 

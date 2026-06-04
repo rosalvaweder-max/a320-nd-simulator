@@ -24,27 +24,6 @@ export const COLORS = {
     COMPASS_MARKER: '#00FFFF',
     
     // 地形与天气
-    TERRAIN_LOW: '#004400',      // 0-1000英尺
-    TERRAIN_MEDIUM: '#008800',   // 1000-2000英尺
-    TERRAIN_HIGH: '#00CC00',     // 2000-5000英尺
-    TERRAIN_VERY_HIGH: '#FFFF00', // 5000-10000英尺
-    TERRAIN_EXTREME: '#FF0000',  // 10000+英尺
-    
-    WEATHER_LIGHT: '#00AAFF',    // 弱降水
-    WEATHER_MODERATE: '#0088FF', // 中等降水
-    WEATHER_HEAVY: '#0000FF',    // 强降水
-    WEATHER_EXTREME: '#FF00FF',  // 极端降水
-    
-    // TCAS 交通
-    TCAS_PROXIMATE: '#00FF00',   // 邻近飞机
-    TCAS_TA: '#FFFF00',          // 交通咨询
-    TCAS_RA: '#FF0000',          // 决断咨询
-    
-    // 特殊效果
-    GLOW_EFFECT: 'rgba(255, 255, 255, 0.1)',
-    PIXEL_GRID: 'rgba(100, 100, 100, 0.05)',
-    CRT_PHOSPHOR: 'rgba(0, 255, 0, 0.05)',
-    
     // 向后兼容别名（供 drawingUtils.js 使用）
     AIRCRAFT_YELLOW: '#FFFF00',      // YELLOW 的别名
     LABEL_CYAN: '#00FFFF',           // CYAN 的别名
@@ -238,58 +217,5 @@ export const MOCK_TCAS = [
         verticalSpeed: -800,
         threatLevel: 'OTHER',    // 其他飞机
         type: 'CRJ',
-    },
-];
-
-// 天气雷达数据
-export const MOCK_WEATHER = [
-    {
-        bearing: 30,
-        distance: 40,
-        intensity: 'HEAVY',     // 强降水
-        turbulence: true,       // 有颠簸
-    },
-    {
-        bearing: 120,
-        distance: 25,
-        intensity: 'MODERATE',  // 中等降水
-        turbulence: false,
-    },
-    {
-        bearing: 210,
-        distance: 60,
-        intensity: 'LIGHT',     // 弱降水
-        turbulence: false,
-    },
-];
-
-// 地形数据
-export const MOCK_TERRAIN = [
-    {
-        minX: -200,
-        maxX: -100,
-        minY: 50,
-        maxY: 150,
-        minElevation: 0,
-        maxElevation: 500,
-        color: 'TERRAIN_LOW',   // 低海拔
-    },
-    {
-        minX: -50,
-        maxX: 50,
-        minY: -50,
-        maxY: 50,
-        minElevation: 1000,
-        maxElevation: 2500,
-        color: 'TERRAIN_MEDIUM', // 中海拔
-    },
-    {
-        minX: 100,
-        maxX: 200,
-        minY: -100,
-        maxY: 0,
-        minElevation: 3000,
-        maxElevation: 6000,
-        color: 'TERRAIN_HIGH',   // 高海拔
     },
 ];

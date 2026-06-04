@@ -1,0 +1,10 @@
+body {
+  font-family: 'Inconsolata', 'Courier New', Courier, monospace;
+  background-color: #1a1a1a;
+  color: white;
+  margin: 0;
+  padding: 0;
+}
+.professional-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
