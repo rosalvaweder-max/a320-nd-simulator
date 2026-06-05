@@ -436,10 +436,8 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
             // 再直线飞向下一个航路点
             // 航路显示在每个航路点处显示带弧线的计划路径
             
-            // 计算用于显示的转弯半径（与 App.js 相同的公式）
-            const TURN_RATE_RAD_PER_SEC = 3 * Math.PI / 180;
-            const gs = aircraft.gs || 432;
-            const turnRadiusNM = gs / (3600 * TURN_RATE_RAD_PER_SEC);
+            // 转弯半径固定为 2.3 海里（与 App.js 保持一致）
+            const turnRadiusNM = 2.3;
             const turnRadiusPx = turnRadiusNM * pxPerNM;
             
             ctx.moveTo(pts[0].sx, pts[0].sy);
@@ -741,14 +739,14 @@ const NDDisplay = ({ mode, range, aircraft, activeRoute, secondaryRoute, systemS
         drawRangeArc(range * 0.5);
         drawRangeArc(range * 0.25);
     } else if (mode === 'NAV') {
-        // ROSE NAV：距离圈在罗盘半径的50%处
-        drawRangeRing(compassRadius * 0.5, Math.round(compassRadius * 0.5 / pxPerNM));
+        // ROSE NAV：距离圈在罗盘半径的50%处，标签显示量程的一半
+        drawRangeRing(compassRadius * 0.5, Math.round(range * 0.5));
     } else if (mode === 'VOR' || mode === 'LS') {
-        // VOR和ILS模式：单个距离圈在罗盘半径的50%处
-        drawRangeRing(compassRadius * 0.5, Math.round(compassRadius * 0.5 / pxPerNM));
+        // VOR和ILS模式：单个距离圈在罗盘半径的50%处，标签显示量程的一半
+        drawRangeRing(compassRadius * 0.5, Math.round(range * 0.5));
     } else {
-        // PLAN和其他模式：距离圈在罗盘半径的50%处
-        drawRangeRing(compassRadius * 0.5, Math.round(compassRadius * 0.5 / pxPerNM));
+        // PLAN和其他模式：距离圈在罗盘半径的50%处，标签显示量程的一半
+        drawRangeRing(compassRadius * 0.5, Math.round(range * 0.5));
     }
     ctx.setLineDash([]);
     ctx.restore();

@@ -276,8 +276,8 @@ const App = () => {
             // 右转：航向增大（turnAngle > 0）
             const isLeftTurn = turnAngle < 0;
 
-            // 计算转弯半径（海里）
-            const turnRadiusNM = gs / (3600 * TURN_RATE_RAD_PER_SEC);
+            // 转弯半径固定为 2.3 海里（对应 432 节时 1 倍速度的标准转弯半径）
+            const turnRadiusNM = 2.3;
             
             // 飞越转弯：圆弧中心位于入航航向垂直方向、距航路点 turnRadiusNM 处
             // 左转（航向减小）：中心在入航方向的左侧
@@ -343,6 +343,12 @@ const App = () => {
 
       const nmPerSec = (gs / 3600) * speedFactor;
       const moveDist = nmPerSec * dt;
+      
+      // 转弯半径固定为 2.3 海里（对应 432 节时 1 倍速度的标准转弯半径）
+      const turnRadiusNM = 2.3;
+      // 到达判定距离：确保飞机足够接近航路点再开始转弯
+      // 使用转弯半径的 2 倍作为阈值，保证飞机稳定到达
+      const arrivalThreshold = Math.max(0.05, turnRadiusNM * 2.0);
 
       // ==========================================
       // 阶段4：飞行阶段管理与移动
@@ -430,8 +436,8 @@ const App = () => {
       }
       // --- 阶段：STRAIGHT（直飞，默认） ---
       else {
-        // 检查是否到达目标航路点
-        if (distToTarget < 0.3) {
+        // 检查是否到达目标航路点（使用基于转弯半径的动态阈值）
+        if (distToTarget < arrivalThreshold) {
           console.log('到达目标:', targetWpt.name, '当前索引:', currentTargetIdx);
           
           if (currentTargetIdx === route.length - 1) {
@@ -758,10 +764,10 @@ const App = () => {
           React.createElement('input', {
             key: 'speed-input',
             type: 'range',
-            min: '0.5',
-            max: '4',
-            step: '0.5',
-            value: (aircraft.gs / 432).toFixed(1),
+            min: '1',
+            max: '10',
+            step: '1',
+            value: Math.round(aircraft.gs / 432),
             onChange: (e) => {
               const multiplier = parseFloat(e.target.value);
               const baseSpeed = 432; // ~0.12 NM/s base speed
@@ -788,7 +794,7 @@ const App = () => {
             }, '×1'),
             React.createElement('span', {
               key: 'speed-max',
-            }, '×4')
+            }, '×10')
           ])
         ]),
 
